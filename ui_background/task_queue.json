@@ -1,0 +1,71 @@
+{
+    "name": "",
+    "loop": false,
+    "loop_count": 1,
+    "map_name": "factoryall",
+    "tasks": [
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "1xuncha0"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "1bang"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "1xuncha2"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "7beng"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "7ruanguan1"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "7navi1"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "7navi2"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "1xuncha3"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "\u5382\u533a\u51fa\u53e3"
+            }
+        }
+    ]
+}
