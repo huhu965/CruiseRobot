@@ -1,0 +1,8 @@
+*.[oa]
+build/
+__pycache__/
+*.log
+/test
+dist/
+/robot
+*.pdf
