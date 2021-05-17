@@ -159,30 +159,55 @@ def handle_high_speed(self):
     self.set_speed_thread.start()
 
 def handle_left_up(self):
-    param = {"command":PTZ_Command["TILT_UP"]}
-    request_param = creat_request_param("Get", "ptz_direction_control",param)
-    self.ptz_control_thread = http_request_Thread(request_param) # 实例化自己建立的任务线程类
+    request_params = []
+    param = {"dwPTZCommand":PTZ_Command["TILT_UP"],"dwSpeed":1,"dwStop":0}
+    request_param = creat_request_param("Get", "ptz_control",param)
+    request_params.append(request_param)
+    param = {"dwPTZCommand":PTZ_Command["TILT_UP"],"dwSpeed":1,"dwStop":1}
+    request_param = creat_request_param("Get", "ptz_control",param)
+    request_params.append(request_param)
+    
+    self.ptz_control_thread = http_request_Thread(request_params,time_interval=2) # 实例化自己建立的任务线程类
     self.ptz_control_thread.signal.connect(self.callback) #设置任务线程发射信号触发的函数
     self.ptz_control_thread.start()
 
 def handle_left_down(self):
-    param = {"command":PTZ_Command["TILT_DOWN"]}
-    request_param = creat_request_param("Get", "ptz_direction_control",param)
-    self.ptz_control_thread = http_request_Thread(request_param) # 实例化自己建立的任务线程类
+    request_params = []
+    param = {"dwPTZCommand":PTZ_Command["TILT_DOWN"],"dwSpeed":1,"dwStop":0}
+    request_param = creat_request_param("Get", "ptz_control",param)
+    request_params.append(request_param)
+    param = {"dwPTZCommand":PTZ_Command["TILT_DOWN"],"dwSpeed":1,"dwStop":1}
+    request_param = creat_request_param("Get", "ptz_control",param)
+    request_params.append(request_param)
+    
+    self.ptz_control_thread = http_request_Thread(request_params,time_interval=2) # 实例化自己建立的任务线程类
     self.ptz_control_thread.signal.connect(self.callback) #设置任务线程发射信号触发的函数
     self.ptz_control_thread.start()
 
 def handle_left_left(self):
+    request_params = []
     param = {"dwPTZCommand":PTZ_Command["PAN_LEFT"],"dwSpeed":1,"dwStop":0}
     request_param = creat_request_param("Get", "ptz_control",param)
-    self.ptz_control_thread = http_request_Thread(request_param) # 实例化自己建立的任务线程类
+    request_params.append(request_param)
+    param = {"dwPTZCommand":PTZ_Command["PAN_LEFT"],"dwSpeed":1,"dwStop":1}
+    request_param = creat_request_param("Get", "ptz_control",param)
+    request_params.append(request_param)
+    print(request_params)
+    
+    self.ptz_control_thread = http_request_Thread(request_params,time_interval=2) # 实例化自己建立的任务线程类
     self.ptz_control_thread.signal.connect(self.callback) #设置任务线程发射信号触发的函数
     self.ptz_control_thread.start()
 
 def handle_left_right(self):
-    param = {"command":PTZ_Command["PAN_RIGHT"]}
-    request_param = creat_request_param("Get", "ptz_direction_control",param)
-    self.ptz_control_thread = http_request_Thread(request_param) # 实例化自己建立的任务线程类
+    request_params = []
+    param = {"dwPTZCommand":PTZ_Command["PAN_RIGHT"],"dwSpeed":1,"dwStop":0}
+    request_param = creat_request_param("Get", "ptz_control",param)
+    request_params.append(request_param)
+    param = {"dwPTZCommand":PTZ_Command["PAN_RIGHT"],"dwSpeed":1,"dwStop":1}
+    request_param = creat_request_param("Get", "ptz_control",param)
+    request_params.append(request_param)
+    
+    self.ptz_control_thread = http_request_Thread(request_params,time_interval=2) # 实例化自己建立的任务线程类
     self.ptz_control_thread.signal.connect(self.callback) #设置任务线程发射信号触发的函数
     self.ptz_control_thread.start()
 

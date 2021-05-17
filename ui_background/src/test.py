@@ -67,11 +67,12 @@ import os
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_video']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['close_video']}", timeout=5)
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
+response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
 
-# 查看地图的点列表
-param = {"map_name":"factoryall","type":2}
-response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['positions']}", params=param, timeout=3)
+# # 查看地图的点列表
+
+# param = {"map_name":"fsactoryall","type":2}
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['positions']}", params=param, timeout=3)
 
 # # 获取地图图片
 # cv2.namedWindow("SERVER",0);
@@ -147,5 +148,9 @@ response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{rob
 
 # param = {"dwPTZCommand":23,"dwSpeed":1,"dwStop":0}
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['ptz_control']}", params =param, timeout=5)
+# time.sleep(2)
+# param = {"dwPTZCommand":23,"dwSpeed":1,"dwStop":1}
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['ptz_control']}", params =param, timeout=5)
+
 print(response.status_code)
 print(response.content)

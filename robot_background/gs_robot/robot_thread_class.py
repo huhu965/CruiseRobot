@@ -29,13 +29,13 @@ class robot_scan_mode_process(Thread):
     #巡查任务
     def CheckTask(self): 
         self.task_running = True
-        url = f"ptz_control?dwPTZCommand={PTZ_Command['TILT_UP']}&dwSpeed=2&dwStop=0" # dwStop 0开始 1结束
-        self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
-        time.sleep(5)
-        url = f"ptz_control?dwPTZCommand={PTZ_Command['TILT_UP']}&dwSpeed=2&dwStop=1" # dwStop 0开始 1结束
-        self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
+        # url = f"ptz_control?dwPTZCommand={PTZ_Command['TILT_UP']}&dwSpeed=2&dwStop=0" # dwStop 0开始 1结束
+        # self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
+        # time.sleep(5)
+        # url = f"ptz_control?dwPTZCommand={PTZ_Command['TILT_UP']}&dwSpeed=2&dwStop=1" # dwStop 0开始 1结束
+        # self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
 
-        time.sleep(5)
+        # time.sleep(5)
 
         url = f"ptz_control?dwPTZCommand={PTZ_Command['PAN_LEFT']}&dwSpeed=2&dwStop=0" # dwStop 0开始 1结束
         self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
@@ -55,17 +55,17 @@ class robot_scan_mode_process(Thread):
 
         url = f"ptz_control?dwPTZCommand={PTZ_Command['PAN_LEFT']}&dwSpeed=2&dwStop=0" # dwStop 0开始 1结束
         self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
-        time.sleep(5)
+        time.sleep(6)
         url = f"ptz_control?dwPTZCommand={PTZ_Command['PAN_LEFT']}&dwSpeed=2&dwStop=1" # dwStop 0开始 1结束
         self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
 
         time.sleep(5)
 
-        url = f"ptz_control?dwPTZCommand={PTZ_Command['TILT_DOWN']}&dwSpeed=2&dwStop=0" # dwStop 0开始 1结束
-        self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
-        time.sleep(5)
-        url = f"ptz_control?dwPTZCommand={PTZ_Command['TILT_DOWN']}&dwSpeed=2&dwStop=1" # dwStop 0开始 1结束
-        self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
+        # url = f"ptz_control?dwPTZCommand={PTZ_Command['TILT_DOWN']}&dwSpeed=2&dwStop=0" # dwStop 0开始 1结束
+        # self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
+        # time.sleep(5)
+        # url = f"ptz_control?dwPTZCommand={PTZ_Command['TILT_DOWN']}&dwSpeed=2&dwStop=1" # dwStop 0开始 1结束
+        # self.request_process.cmd_socket.sendto(url.encode('utf-8'), self.request_process.cmd_ip) #向摄像头进程发送指令
         
         self.task_running = False
     #暂停任务

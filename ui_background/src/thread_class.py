@@ -66,7 +66,7 @@ class http_request_Thread(QThread): # 发送http 请求
     def HandleOncePostRequest(self, url, param):
         try:
             response = requests.post(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API[url]}", 
-                                    data=json.dumps(self.param),  #dumps参数为字典，dump参数为文件指针
+                                    data=json.dumps(param),  #dumps参数为字典，dump参数为文件指针
                                     headers=self.headers, 
                                     timeout=self.wait_timeout)
             self.signal.emit(response)
