@@ -249,13 +249,14 @@ class robot_navigate_status_update_Thread(Thread, Client_Socket):
             except Exception as e:
                 print(e)
 
-
+#语音识别线程，在机器人被语音唤醒后，接收从摄像头传过来的语音信号
+#上传并将识别结果传给主线程，用于进一步的处理
 class speech_recognition_Process(Process):
     def __init__(self):
         super(speech_recognition_Process, self).__init__()
         logging.basicConfig()
         pd = "edu"
-        end_tag = "{\"end\": true}"
+        self.end_tag = "{\"end\": true}"
         base_url = "ws://rtasr.xfyun.cn/v1/ws"
         app_id = "35dcd3b2"
         api_key = "4ecffbda7f4ee1a993137808755daf51"
@@ -272,15 +273,17 @@ class speech_recognition_Process(Process):
         signa = base64.b64encode(signa)
         signa = str(signa, 'utf-8')
 
-        self.process_is_alive = True
+        self.process_is_alive = True #判断进程是否结束了
+        self.data_change_lock = threading.Lock()  #线程锁
+        self.data_store_buff = [] #缓存音频
+        self.max_store_size = 64000 #存两秒的音频 16k采样
 
-        self.data_store_buff = []
-        self.max_store_size = 32000 #存两秒的音频
         ip_port = ("127.0.0.1",8010)
         self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #接收音频信号
         self.receive_socket.bind(ip_port)
 
         self.main_process_ip = ("127.0.0.1",8011)  #主线程的
+        self.exam_process_ip = ("127.0.0.1",8012)  #考试线程的
         self.result_upload_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #提交数据
 
         self.ws = create_connection(base_url + "?appid=" + app_id + "&ts=" + ts + "&signa=" + quote(signa))
@@ -290,17 +293,17 @@ class speech_recognition_Process(Process):
         self.thread_voice.start()
 
     def send(self):
-        CHUNK = 5120#队列长度
-        FORMAT = pyaudio.paInt16 #保存格式
-        CHANNELS = 1  #几个通道
-        RATE = 16000 #采样率，一般8000的采样率能识别出人说的话
-        record_p = pyaudio.PyAudio() #实例化
-        #打开获取流
-        stream = record_p.open(format=FORMAT,
-                channels=CHANNELS,
-                rate=RATE,
-                input=True,
-                frames_per_buffer=CHUNK)
+        # CHUNK = 5120#队列长度
+        # FORMAT = pyaudio.paInt16 #保存格式
+        # CHANNELS = 1  #几个通道
+        # RATE = 16000 #采样率，一般8000的采样率能识别出人说的话
+        # record_p = pyaudio.PyAudio() #实例化
+        # #打开获取流
+        # stream = record_p.open(format=FORMAT,
+        #         channels=CHANNELS,
+        #         rate=RATE,
+        #         input=True,
+        #         frames_per_buffer=CHUNK)
         # stream.stop_stream()
         # stream.close()
         # record_p.terminate()
@@ -308,21 +311,21 @@ class speech_recognition_Process(Process):
             while True:
                 if not self.process_is_alive:
                     break
-                chunk = stream.read(1280)
+                chunk = self.get_data(1280)
                 if not chunk:
-                    break
+                    continue
                 self.ws.send(chunk)
 
                 time.sleep(0.04)
         finally:
             pass
 
-        self.ws.send(bytes(end_tag.encode('utf-8')))
+        self.ws.send(bytes(self.end_tag.encode('utf-8')))
         print("send end tag success")
         self.ws.close()
 
-
-    def recv_voice_data(self):
+    #接收传过来的声音信息，放入缓存中
+    def recv_voice_data(self): 
         while True:
             if not self.process_is_alive:
                 break
@@ -330,19 +333,29 @@ class speech_recognition_Process(Process):
             self.insert_data_tobuff(data)
 
     def insert_data_tobuff(self, data): #输入bytes吧
-        length_data = len(data)
-        if (len(self.data_store_buff) + length_data) > max_size:
-            del self.data_store_buff[0 : length_data]
-            new_data_list = list(data)
-            self.data_store_buff.extend(new_data_list)
-        else:
-            new_data_list = list(data)
-            self.data_store_buff.extend(new_data_list)
+        try:
+            self.data_change_lock.acquire()
+            length_data = len(data)
+            if (len(self.data_store_buff) + length_data) > self.max_store_size:
+                del self.data_store_buff[0 : length_data]
+                new_data_list = list(data)
+                self.data_store_buff.extend(new_data_list)
+            else:
+                new_data_list = list(data)
+                self.data_store_buff.extend(new_data_list)
+        except Exception as e:
+            print("insert data error: ",e)
+        finally:
+            self.data_change_lock.release()
 
     def get_data(self,data_size):
         if(len(self.data_store_buff)>data_size):
             data = bytes(self.data_store_buff[0:data_size])
-            del self.data_store_buff[0 : data_size]
+            try:
+                self.data_change_lock.acquire()
+                del self.data_store_buff[0 : data_size]
+            finally:
+                self.data_change_lock.release()
             return data
         else:
             return b''
@@ -372,7 +385,7 @@ class speech_recognition_Process(Process):
                             else:
                                 result_cn += result["cw"][0]["w"]
                         print(result_cn)
-                        self.result_upload_socket.sendto((data).encode("utf-8"), self.main_process_ip)
+                        self.result_upload_socket.sendto((result_cn).encode("utf-8"), self.main_process_ip)
 
                 if result_dict["action"] == "error":
                     print("rtasr error: " + result)

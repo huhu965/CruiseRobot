@@ -34,7 +34,7 @@ API = {
     "initialize_global" :"/gs-robot/cmd/initialize_global",#?map_name=?",  # 应该是自动行走确定在地图上的坐标点
     "is_initialize_finished" :"/gs-robot/cmd/is_initialize_finished",# 转圈初始化 是否完成
     "anywhere_navigate" : "/gs-robot/cmd/navigate", #post,从地图获取导航点，然后传给机器人
-    "navigate" :"/gs-robot/cmd/position/navigate",#?map_name=?&position_name=?",  # 导航到指定地图的指定标记点
+    "navigate" :"/gs-robot/cmd/position_navigate",#?map_name=?&position_name=?",  # 导航到指定地图的指定标记点
     "pause_navigate" :"/gs-robot/cmd/pause_navigate",   # 暂停导航
     "resume_navigate" :"/gs-robot/cmd/resume_navigate",   # 恢复导航
     "cancel_navigate" :"/gs-robot/cmd/cancel_navigate",   # 取消导航

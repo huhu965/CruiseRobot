@@ -4,7 +4,13 @@ import sys
 import os
 import subprocess
 import signal
+import requests
 
+def position_navigate(self, param = ""):
+    response = requests.get(f"http://{self.robot_ip}:{self.robot_port}/gs-robot/cmd/position/navigate",params=param, timeout=1)
+    back_data = respond_message_creat(content=response.content)
+    return back_data
+    
 def move(self, post_data):
     try:
         if self.robot_move_thread == None:

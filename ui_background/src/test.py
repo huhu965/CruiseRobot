@@ -38,8 +38,8 @@ import os
 # cv2.imshow("enhanced",decimg)
 # cv2.waitKey(0)
 
-# param = {"map_name":"factoryall","position_name":"7test1"}
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['navigate']}", params = param, timeout=5)
+param = {"map_name":"factoryall","position_name":"1xuncha0"}
+response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['navigate']}", params = param, timeout=5)
 
 # param = {"map_name":"factory","init_point_name":"End"}
 
@@ -67,7 +67,7 @@ import os
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_video']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['close_video']}", timeout=5)
-response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
 
 # # 查看地图的点列表
 
@@ -75,6 +75,7 @@ response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{rob
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['positions']}", params=param, timeout=3)
 
 # # 获取地图图片
+# param = {"map_name":"factoryall"}
 # cv2.namedWindow("SERVER",0);
 # cv2.resizeWindow("SERVER", 1080, 960);
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['map_png']}", params=param, timeout=20)
@@ -84,7 +85,7 @@ response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{rob
 # cv2.imshow('SERVER',decimg)
 # # #waitkey内的参数控制每张图像显示多少毫秒，返回值是这段时间内键盘的值
 # cv2.waitKey()
-# cv2.imwrite("test.png", decimg);
+# cv2.imwrite("factoryall.png", decimg);
 # # 
 
 

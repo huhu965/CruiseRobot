@@ -42,6 +42,9 @@ class PlayVoice(Process):
         self.voice_name_dict = voice_name_dict
         voice_source_path = "./voice_source"
         self.wf =  wave.open(voice_source_path + f"/{self.voice_name_dict[self.name]}", 'rb')
+        self._is_playing = True
+    def is_playing(self):
+        return self._is_playing
     def run(self):
         #存放音源的绝对路径
         CHUNK = 1024#队列长度
@@ -65,6 +68,7 @@ class PlayVoice(Process):
         self.stream.stop_stream()
         self.stream.close()
         self.record_p.terminate()
+        self._is_playing = False
 
 class robot_awake_Process(Process):
     def __init__(self,ip_port):
