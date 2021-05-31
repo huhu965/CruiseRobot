@@ -6,14 +6,15 @@ import time
 import datetime
 import json
 from threading import Thread
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 from play_voice import PlayVoice
 import random
 class exam_safe_Process(Process):
-    def __init__(self):
+    def __init__(self,message_queue):
         super(exam_safe_Process, self).__init__()
         self.process_is_alive = True #进程是否活着
         self.question_number = 10
+        self.message_queue = message_queue
         
     def jaccard_judge(self,input_answer, correct_answer):
         a = set(list(input_answer))
@@ -50,4 +51,6 @@ class exam_safe_Process(Process):
                     time.sleep(0.5)
                 else:
                     break
+            while True:
+                
         

@@ -250,6 +250,20 @@ void CALLBACK infrared_DecCBFun(int nPort, char * pBuf, int nSize, FRAME_INFO * 
     }
 }
 
+void CALLBACK RemoteConfigCallback(DWORD dwType, void *lpBuffer, DWORD dwBufLen, void *pUserData)
+{
+    LPNET_DVR_THERMOMETRY_UPLOAD _temperature_ptr = (LPNET_DVR_THERMOMETRY_UPLOAD)lpBuffer;
+    switch (dwType)
+    {
+        case 2://NET_SDK_CALLBACK_TYPE_DATA
+            cout<<"最高温度"<<_temperature_ptr->fHighestPointTemperature<<endl;
+            break;
+        default:
+            break;
+    }
+
+}
+
 /*云台控制*/
 void PTZ_control(void* args){
     string _url_param = *(string*)args;
@@ -283,6 +297,18 @@ void video_begin(void* args){
             break;
         default:
             break;
+    }
+}
+void _read_temperature(void* args)
+{
+    CameraParamPtr _camera_param_ptr = (CameraParamPtr)args;
+    NET_DVR_REALTIME_THERMOMETRY_COND thermometry ={0};
+    thermometry.dwSize = sizeof(thermometry);// 结构体大小
+    thermometry.byRuleID = 1;// 规则ID
+    thermometry.dwChan = 2;// 通道号
+    if(!NET_DVR_StartRemoteConfig(_camera_param_ptr->lUserID,
+                                    NET_DVR_GET_REALTIME_THERMOMETRY,
+                                    &thermometry,10,RemoteConfigCallback,NULL)){
     }
 }
 void _video_begin(void* args){

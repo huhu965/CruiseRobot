@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/include/",
                 "/usr/local/include/opencv4/**",
-                "/usr/src/linux-headers-5.4.0-65-generic/include/**"
+                // "/usr/src/linux-headers-5.4.0-65-generic/include/**"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/gcc",

@@ -19,7 +19,7 @@ from urllib.parse import quote
 import logging
 import pyaudio
 import wave
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 
 #读取气体浓度
 class gasConcentration_Thread(Thread):
@@ -252,7 +252,7 @@ class robot_navigate_status_update_Thread(Thread, Client_Socket):
 #语音识别线程，在机器人被语音唤醒后，接收从摄像头传过来的语音信号
 #上传并将识别结果传给主线程，用于进一步的处理
 class speech_recognition_Process(Process):
-    def __init__(self):
+    def __init__(self,cmd_queue):
         super(speech_recognition_Process, self).__init__()
         logging.basicConfig()
         pd = "edu"
@@ -284,6 +284,8 @@ class speech_recognition_Process(Process):
 
         self.main_process_ip = ("127.0.0.1",8011)  #主线程的
         self.exam_process_ip = ("127.0.0.1",8012)  #考试线程的
+        self.cmd_queue = cmd_queue #接收主进程传入的指令
+        self.cmd_respond = 0 # 0表示都不发，1是发往主线程的命令 2是发往考试组
         self.result_upload_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #提交数据
 
         self.ws = create_connection(base_url + "?appid=" + app_id + "&ts=" + ts + "&signa=" + quote(signa))
@@ -291,6 +293,16 @@ class speech_recognition_Process(Process):
         self.trecv.start()
         self.thread_voice = threading.Thread(target=self.recv_voice_data,args=())
         self.thread_voice.start()
+
+    def cmd_receive(self):
+        while True:
+            try:
+                input_cmd = self.queue.get(block=False)
+                if input_cmd == "judeg_respond":
+
+            except Exception as e:
+                print("ok",e)
+                time.sleep(1)
 
     def send(self):
         # CHUNK = 5120#队列长度
