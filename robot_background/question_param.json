@@ -1,0 +1,72 @@
+{
+    "SystemVoice":
+        {
+            "开始初始化":"begin_init.wav",
+            "链接服务器失败":"connect_server_fail.wav",
+            "执行巡航任务":"execute_navigate_task.wav",
+            "初始化完成":"init_finish.wav",
+            "自我介绍":"introduce_myself.wav",
+            "再回答一次":"respond_again.wav",
+            "回答正确":"respond_correct.wav",
+            "回答错误":"respond_error.wav",
+            "考核开始":"start_exam.wav",
+            "考核结束":"end_exam.wav",
+            "考核通过":"pass_exam.wav",
+            "考核没通过":"failed_exam.wav",
+            "电池电量低":"warning_battery.wav",
+            "初始化位置": "init_position.wav",
+            "响应唤醒": "respond_awake.wav"
+        },
+    "安全知识题库": [
+        {
+            "number" : 1,
+            "file_name": "安全知识题库1.wav",
+            "answer": "重大事故隐患"
+        },
+        {
+            "number" : 2,
+            "file_name": "安全知识题库2.wav",
+            "answer": "定项目定人员定措施定时间定责任"
+        },
+        {
+            "number" : 3,
+            "file_name": "安全知识题库3.wav",
+            "answer": "呼吸道吸入"
+        },
+        {
+            "number" : 4,
+            "file_name": "安全知识题库4.wav",
+            "answer": "安全帽安全带安全网"
+        },
+        {
+            "number" : 5,
+            "file_name": "安全知识题库5.wav",
+            "answer": "30个月"
+        },
+        {
+            "number" : 6,
+            "file_name": "安全知识题库6.wav",
+            "answer": "落实安全责任推动安全发展"
+        },
+        {
+            "number" : 7,
+            "file_name": "安全知识题库7.wav",
+            "answer": "遵纪守法安全生产预防为主持续创新降低职业风险"
+        },
+        {
+            "number" : 8,
+            "file_name": "安全知识题库8.wav",
+            "answer": "压力管道"
+        },
+        {
+            "number" : 9,
+            "file_name": "安全知识题库9.wav",
+            "answer": "主要责任人"
+        },
+        {
+            "number" : 10,
+            "file_name": "安全知识题库10.wav",
+            "answer": "相应资格"
+        }
+    ]
+}

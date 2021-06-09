@@ -76,7 +76,7 @@ int cb_ivw_msg_proc( const char *sessionID, int msg, int param1, int param2, con
         //向语音识别发送指令，已经被唤醒
         std::string awake_commond = "GET /gs_robot/cmd/voice_awake\r\n";
         int num = sendto(normal_camera.voice_upload_socket, awake_commond.c_str(), awake_commond.length(),
-                    0 , (struct sockaddr *)&normal_camera.voice_addr, sizeof(struct sockaddr));
+                    0 , (struct sockaddr *)&normal_camera.voice_cmd_addr, sizeof(struct sockaddr));
         //这里没有用锁，有可能数据冲突出错误
     }
 }
@@ -188,8 +188,8 @@ void CALLBACK voice_DecCBFun(int nPort, char * pBuf, int nSize, FRAME_INFO * pFr
                                     (const void *)data_Buffer, 
                                     out_len, 
                                     awake_param.audio_stat);
-            int num = sendto(normal_camera.voice_upload_socket, data_Buffer, out_len,
-                0 , (struct sockaddr *)&normal_camera.voice_addr, sizeof(struct sockaddr));
+            // int num = sendto(normal_camera.voice_upload_socket, data_Buffer, out_len,
+            //     0 , (struct sockaddr *)&normal_camera.voice_addr, sizeof(struct sockaddr));
             // cout<<"发送："<<num<<endl;
             if (MSP_SUCCESS != err_code)
             {
@@ -206,15 +206,12 @@ void CALLBACK voice_DecCBFun(int nPort, char * pBuf, int nSize, FRAME_INFO * pFr
             }
         }
         else{ //如果唤醒了，就传数据
-            char data_Buffer[8000];
-            memset(data_Buffer, 0, sizeof(data_Buffer)); //清空
             // memcpy(data_Buffer,pBuf,nSize);
-            int out_len = 0;
+            // int out_len = 0;
             //            输入数组      short长度   输出的数组           输出的字节长度
-            Resample16K((short*)pBuf ,nSize/2, (short*)data_Buffer, out_len);//8K转为16k
-            int num = sendto(normal_camera.voice_upload_socket, data_Buffer, out_len,
+            // Resample16K((short*)pBuf ,nSize/2, (short*)data_Buffer, out_len);//8K转为16k
+            int num = sendto(normal_camera.voice_upload_socket, pBuf, nSize,
                         0 , (struct sockaddr *)&normal_camera.voice_addr, sizeof(struct sockaddr));
-            // cout<<"发送huanxing："<<num<<endl;
         }
     }
 }
@@ -252,16 +249,49 @@ void CALLBACK infrared_DecCBFun(int nPort, char * pBuf, int nSize, FRAME_INFO * 
 
 void CALLBACK RemoteConfigCallback(DWORD dwType, void *lpBuffer, DWORD dwBufLen, void *pUserData)
 {
-    LPNET_DVR_THERMOMETRY_UPLOAD _temperature_ptr = (LPNET_DVR_THERMOMETRY_UPLOAD)lpBuffer;
-    switch (dwType)
+    if (dwType == NET_SDK_CALLBACK_TYPE_DATA)
     {
-        case 2://NET_SDK_CALLBACK_TYPE_DATA
-            cout<<"最高温度"<<_temperature_ptr->fHighestPointTemperature<<endl;
-            break;
-        default:
-            break;
+        LPNET_DVR_THERMOMETRY_UPLOAD lpThermometry = new NET_DVR_THERMOMETRY_UPLOAD;
+        memcpy(lpThermometry, lpBuffer, sizeof(*lpThermometry));
+        LPNET_DVR_THERMOMETRY_UPLOAD _temperature_ptr = (LPNET_DVR_THERMOMETRY_UPLOAD)lpBuffer;
+    
+        // if(lpThermometry->byRuleCalibType==0) //点测温
+        // {
+        //     printf("点测温信息:fTemperature[%f]\n", lpThermometry->struPointThermCfg.fTemperature);
+        // } 
+ 
+        if((lpThermometry->byRuleCalibType==1)||(lpThermometry->byRuleCalibType==2)) //框/线测温
+        {
+            char data_buff[256];
+            memset(data_buff, 0, sizeof(data_buff)); //清空
+            int data_size = sprintf(data_buff,"max_temperature=%.2f&min_temperature=%.2f&average_temperature=%.2f",
+                                    _temperature_ptr->struLinePolygonThermCfg.fMaxTemperature,
+                                    _temperature_ptr->struLinePolygonThermCfg.fMinTemperature,
+                                    _temperature_ptr->struLinePolygonThermCfg.fAverageTemperature);
+            // cout<<data_buff<<endl;              
+            int num = sendto(infrared_camera.socket_udp, data_buff, data_size,
+                         0 , (struct sockaddr *)&infrared_camera.udp_server_addr, sizeof(struct sockaddr));
+        }
+ 
+        if (lpThermometry != NULL)
+        {
+            delete lpThermometry;
+            lpThermometry = NULL;
+        }
     }
-
+    else if (dwType == NET_SDK_CALLBACK_TYPE_STATUS)
+    {
+        DWORD dwStatus = *(DWORD*)lpBuffer;
+        if (dwStatus == NET_SDK_CALLBACK_STATUS_SUCCESS)
+        {
+            printf("dwStatus:NET_SDK_CALLBACK_STATUS_SUCCESS\n");            
+        }
+        else if (dwStatus == NET_SDK_CALLBACK_STATUS_FAILED)
+        {
+            DWORD dwErrCode = *(DWORD*)((char *)lpBuffer + 4);
+            printf("NET_DVR_GET_MANUALTHERM_INFO failed, Error code %d\n", dwErrCode);
+        }
+    }
 }
 
 /*云台控制*/
@@ -305,11 +335,13 @@ void _read_temperature(void* args)
     NET_DVR_REALTIME_THERMOMETRY_COND thermometry ={0};
     thermometry.dwSize = sizeof(thermometry);// 结构体大小
     thermometry.byRuleID = 1;// 规则ID
-    thermometry.dwChan = 2;// 通道号
-    if(!NET_DVR_StartRemoteConfig(_camera_param_ptr->lUserID,
+    thermometry.dwChan = 1;// 通道号
+    thermometry.wInterval = 3;
+
+    _camera_param_ptr->lTemperatureHandle = NET_DVR_StartRemoteConfig(_camera_param_ptr->lUserID,
                                     NET_DVR_GET_REALTIME_THERMOMETRY,
-                                    &thermometry,10,RemoteConfigCallback,NULL)){
-    }
+                                    &thermometry,sizeof(thermometry),RemoteConfigCallback,NULL);
+    cout<<"启动:"<<_camera_param_ptr->lTemperatureHandle<<endl;
 }
 void _video_begin(void* args){
     CameraParamPtr _camera_param_ptr = (CameraParamPtr)args;
@@ -405,10 +437,16 @@ void _login_camera(void* args){
     }
 }
 
-//语音系统休眠，恢复标志位
 void voice_sleep(void* args)
 {
-    awake_param.session_id = NULL;
-    awake_param.audio_stat = MSP_AUDIO_SAMPLE_FIRST;
-    awake_param.is_awake = false;
+    _voice_sleep(&awake_param);
+}
+//语音系统休眠，恢复标志位
+void _voice_sleep(void* args)
+{
+    VoiceAwakeParamPtr _awake_param_ptr = (VoiceAwakeParam*)args;
+    QIVWSessionEnd(_awake_param_ptr->session_id,"ok");
+    _awake_param_ptr->is_awake = false;
+    _awake_param_ptr->session_id = NULL;
+    _awake_param_ptr->audio_stat = MSP_AUDIO_SAMPLE_FIRST;
 }

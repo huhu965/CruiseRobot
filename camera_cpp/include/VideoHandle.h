@@ -21,6 +21,7 @@
 #include <vector>
 #include <pthread.h>
 #include <map>
+#include <string>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -49,6 +50,7 @@ typedef struct
     LONG lUserID;
     LONG lRealPlayHandle;
     LONG nPort;
+    LONG lTemperatureHandle;
     NET_DVR_DEVICEINFO_V30 struDeviceInfo;//注册设备结构
     NET_DVR_PREVIEWINFO struPlayInfo;//预览结构
     std::string register_identity;
@@ -70,6 +72,7 @@ typedef struct
     /*udp*/
     int voice_upload_socket;//音频传输
     struct sockaddr_in voice_addr; //服务器地址
+    struct sockaddr_in voice_cmd_addr;//唤醒后给主线程发送唤醒指令
 }CameraParam,* CameraParamPtr;
 
 //语音识别相关参数，结构体不能给初值
@@ -122,6 +125,10 @@ void _build_cmd_server(void* args);
 void _close_cmd_server(void* args);
 /*登录摄像头*/
 void _login_camera(void* args);
+/*建立读取温度长链接*/
+void _read_temperature(void* args);
+/*语音被唤醒后恢复休眠等待下一次唤醒*/
+void _voice_sleep(void* args);
 /*字符串分割函数*/
 std::vector<std::string> split(std::string str, std::string pattern);
 std::map<std::string, std::string> split_url_param(std::string url_param);

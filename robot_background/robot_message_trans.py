@@ -13,7 +13,8 @@ from web_socket import robot_device_status_update_Thread, robot_navigate_status_
 from gs_robot.robot_thread_class import *
 from gs_robot.general_function import Param_Init
 from gs_robot.cmd import open_video, close_video
-from play_voice import PlayVoice, robot_awake_Process
+from play_voice import PlayVoice, play_system_audio
+from handle_awake import RobotAwakeProcess
 #用于机器人工控机的，把来自服务器的请求转一次发送给导航系统
 #再将导航系统的返回值转发给服务器
 #链接的心跳检测类
@@ -63,7 +64,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
         #提交数据线程
         self.robot_device_data_upload_thread = robot_device_data_upload_Thread(self,("101.37.16.240",62223))
         #获取声音线程
-        self.robot_awake_process = robot_awake_Process(("127.0.0.1",8020))
+        self.robot_awake_process = RobotAwakeProcess(("127.0.0.1",8020))
 
 
     #链接成功后向服务器部分注册自己的身份
@@ -211,9 +212,8 @@ class robot_client_message_process(Client_Socket,Param_Init):
         self.connect_server()
         self.register_identity()#注册身份
         time.sleep(2)
-        p = PlayVoice("初始化完成")
-        p.start()
-        open_video(self, robot_usr = True )
+        play_system_audio('初始化完成')
+        # open_video(self, robot_usr = True ) #打开视频
         while True:
             try:
                 request_data = self.receive_request()
@@ -229,9 +229,8 @@ class robot_client_message_process(Client_Socket,Param_Init):
         self.recv_socket.close()
 
 def main():
-    p = PlayVoice("开始初始化")
-    p.start()
-    time.sleep(140)
+    play_system_audio('开始初始化')
+    # time.sleep(140)
     server_ip =  ('101.37.16.240', 62222)#服务器的公网地址和端口
     request_process = robot_client_message_process(server_ip)
     request_process.run()

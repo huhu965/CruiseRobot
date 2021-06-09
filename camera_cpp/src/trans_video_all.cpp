@@ -17,6 +17,7 @@ void FunctionRegister()
     FunctionMap["video_begin"] = video_begin;
     FunctionMap["video_stop"] = video_stop;
     FunctionMap["ptz_control"] = PTZ_control;
+    FunctionMap["voice_sleep"] = voice_sleep;
 }
 //退出收尾函数
 void exit_func(int sig){
@@ -26,6 +27,7 @@ void exit_func(int sig){
     _disconnect_server(&infrared_camera);
     close(normal_camera.command_receive_socket);
     //注销用户
+    NET_DVR_StopRemoteConfig(infrared_camera.lTemperatureHandle);
     NET_DVR_Logout(normal_camera.lUserID);
     NET_DVR_Logout(infrared_camera.lUserID);
     QIVWSessionEnd(awake_param.session_id, "close");
@@ -47,7 +49,6 @@ void* voice_awake(void* args)
 
     while (true){ //循环开启唤醒检测
         int err_code = MSP_SUCCESS;
-        // int audio_stat = MSP_AUDIO_SAMPLE_CONTINUE;
         char sse_hints[128];
         //初始化唤醒
         // cout<<"唤醒检测"<<endl;
@@ -66,20 +67,15 @@ void* voice_awake(void* args)
         if (err_code != MSP_SUCCESS){
             snprintf(sse_hints, sizeof(sse_hints), "QIVWRegisterNotify errorCode=%d", err_code);
             printf("QIVWRegisterNotify failed! error code:%d\n",err_code);
-            QIVWSessionEnd(_awake_param_ptr->session_id, sse_hints);
+            QIVWSessionEnd(_awake_param_ptr->session_id, sse_hints); //释放资源
             _awake_param_ptr->session_id = NULL;
             sleep(1);
             continue;
         }
         while (true){
-            if(_awake_param_ptr->is_awake == true && _awake_param_ptr->session_id != NULL){
-                QIVWSessionEnd(_awake_param_ptr->session_id,"ok");
-                _awake_param_ptr->session_id = NULL;
-                _awake_param_ptr->is_awake = false;
-                // cout<<"安全关闭"<<endl;
-
-            }
             if (_awake_param_ptr->session_id == NULL && _awake_param_ptr->is_awake == false){
+                _voice_sleep(_awake_param_ptr);
+                cout<<"睡眠"<<endl;
                 break;
             }
             else{
@@ -93,10 +89,23 @@ void* voice_awake(void* args)
 void *video_handle_func(void* args){
     CameraParamPtr _camera_param_ptr = (CameraParam*)args;
     HeadData _recv_head;
+    NET_DVR_STD_ABILITY ablityparam = {0};
+    ablityparam.lpCondBuffer = NULL;
+    ablityparam.lpStatusBuffer =(char*)"ThermalCap";
 
-    _connect_server(_camera_param_ptr); //链接服务器
+    // _connect_server(_camera_param_ptr); //链接服务器
     _login_camera(_camera_param_ptr); //登录摄像头
-    // _video_begin(_camera_param_ptr);
+    if(!_camera_param_ptr->have_voice){
+        cout<<"长链接启动"<<endl;
+        // if(!NET_DVR_GetSTDAbility(_camera_param_ptr->lUserID, NET_DVR_GET_THERMAL_CAPABILITIES, &ablityparam)){
+        //     cout<<"红外测温"<<NET_DVR_GetLastError()<<endl;
+        // }
+        // else{
+        //     cout<<"keyi"<<endl;
+        // }
+        _read_temperature(_camera_param_ptr);
+    }
+    _video_begin(_camera_param_ptr);
     while(true){
         memset(&_recv_head, 0, sizeof(HeadData)); //清空
         recv(_camera_param_ptr->socket_tcp, (char*)&_recv_head, sizeof(HeadData), MSG_WAITALL);
@@ -164,12 +173,24 @@ void param_init(){
     addr.sin_port = htons(8002);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     normal_camera.command_addr = addr;
-    //音频传输
+    //音频唤醒后发送指令
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(8020);
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    normal_camera.voice_cmd_addr = addr;
+    //音频传输
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(8021);
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     normal_camera.voice_addr = addr;
+    //温度传输
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(8022);
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    infrared_camera.udp_server_addr = addr;
     //登录结构体初始化
     NET_DVR_PREVIEWINFO struPlayInfo = {0};
     struPlayInfo.hPlayWnd = NULL;         //需要SDK解码时句柄设为有效值，仅取流不解码时可设为空
@@ -199,6 +220,7 @@ void param_init(){
     infrared_camera.transforming_video = false;
     infrared_camera.heart_respond = false;
     infrared_camera.socket_tcp = socket(AF_INET, SOCK_STREAM, 0);
+    infrared_camera.socket_udp = socket(AF_INET, SOCK_DGRAM, 0);
     infrared_camera.have_voice = false;
 
     awake_param.grammar_list = NULL;
@@ -269,7 +291,7 @@ void run(){
             url_cmd = url;
             url_param = "";
         }
-        create_fun func = FunctionMap.find(url_cmd)->second;
+        create_fun func = FunctionMap.find(url_cmd)->second;  //映射函数
         func(&url_param);
     }
 }

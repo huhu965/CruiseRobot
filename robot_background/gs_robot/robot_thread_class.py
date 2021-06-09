@@ -205,6 +205,30 @@ class robot_device_data_upload_Thread(Thread):
         self.send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #udp 链接服务器
         self.server_ip = server_ip
         self.main_process = main_process
+        self.temperature = {}
+        self.temperature["max"] = 0
+        self.temperature["min"] = 0
+        self.temperature["average"] = 0
+
+        self.temperature_receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.temperature_receive_socket.bind(("127.0.0.1", 8022))
+
+        self.receive_temperature_thread = threading.Thread(target=self.recv_temperature) #接收音频信号
+        self.receive_temperature_thread.daemon = True #守护线程
+        self.receive_temperature_thread.start()
+
+    def recv_temperature(self):
+        while True:
+            try:
+                data,addr = self.temperature_receive_socket.recvfrom(512)
+                data1 = data.decode('utf-8').split('&')
+                self.temperature["max_temperature"] = data1[0].split('=')[1]
+                self.temperature["min_temperature"] = data1[1].split('=')[1]
+                self.temperature["average_temperature"] = data1[2].split('=')[1]
+            except Exception as e:
+                print(e)
+                time.sleep(1)
+
 
     def device_data_upload(self,data):#向服务器提交数据
         self.send_socket.sendto((data + '\r\n\r\n').encode("utf-8"), self.server_ip);
@@ -217,6 +241,7 @@ class robot_device_data_upload_Thread(Thread):
             position_data = self.main_process.robot_position_update_thread.get_data() #获取位置信息
             device_data.update(navigate_data)
             device_data.update(position_data)
+            device_data.update(self.temperature)
             device_data["time"] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             # print(device_data)
             self.device_data_upload(json.dumps(device_data))
