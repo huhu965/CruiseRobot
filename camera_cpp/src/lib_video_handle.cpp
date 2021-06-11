@@ -173,14 +173,13 @@ void CALLBACK voice_DecCBFun(int nPort, char * pBuf, int nSize, FRAME_INFO * pFr
 {
     long lFrameType = pFrameInfo->nType;
     int err_code = MSP_SUCCESS;
-
+    char data_Buffer[5000];
+    memset(data_Buffer, 0, sizeof(data_Buffer)); //清空
+    int out_len = 0;
     if(lFrameType == T_AUDIO16)
     {
         if(awake_param.is_awake == false){
-            char data_Buffer[16000];
-            memset(data_Buffer, 0, sizeof(data_Buffer)); //清空
             // memcpy(data_Buffer,pBuf,nSize);
-            int out_len = 0;
             //            输入数组      short长度   输出的数组           输出的字节长度
             Resample16K((short*)pBuf ,nSize/2, (short*)data_Buffer, out_len);//8K转为16k
             // cout<<out_len<<endl;
@@ -206,12 +205,11 @@ void CALLBACK voice_DecCBFun(int nPort, char * pBuf, int nSize, FRAME_INFO * pFr
             }
         }
         else{ //如果唤醒了，就传数据
-            // memcpy(data_Buffer,pBuf,nSize);
-            // int out_len = 0;
             //            输入数组      short长度   输出的数组           输出的字节长度
-            // Resample16K((short*)pBuf ,nSize/2, (short*)data_Buffer, out_len);//8K转为16k
-            int num = sendto(normal_camera.voice_upload_socket, pBuf, nSize,
+            Resample16K((short*)pBuf ,nSize/2, (short*)data_Buffer, out_len);//8K转为16k
+            int num = sendto(normal_camera.voice_upload_socket, data_Buffer, out_len,
                         0 , (struct sockaddr *)&normal_camera.voice_addr, sizeof(struct sockaddr));
+            // cout<<num<<endl;
         }
     }
 }

@@ -209,8 +209,8 @@ class robot_client_message_process(Client_Socket,Param_Init):
         self.robot_device_data_upload_thread.start()
         self.robot_awake_process.start()
 
-        self.connect_server()
-        self.register_identity()#注册身份
+        # self.connect_server()
+        # self.register_identity()#注册身份
         time.sleep(2)
         play_system_audio('初始化完成')
         # open_video(self, robot_usr = True ) #打开视频

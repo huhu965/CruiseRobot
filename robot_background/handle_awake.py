@@ -9,7 +9,7 @@ from threading import Thread
 from multiprocessing import Process, Queue
 from play_voice import PlayVoice
 import random
-from audio_recognize import AudioRecognizeWebsocket
+from audio_recognize import AudioRecognizeWebsocket ,speech_recognition_Process
 
 class BaseVoicePlay(object):
     def __init__(self):
@@ -29,8 +29,10 @@ class BaseVoicePlay(object):
         self.system_play_handle.join()#等待音频播放完
     #开启语音识别线程
     def start_audio_recognize(self, input_queue,output_queue):
-        print("给识别的地址：",output_queue)
         self.audio_recognize_handle =AudioRecognizeWebsocket(input_queue,output_queue)
+        self.audio_recognize_handle.start()
+    def start_audio_long_recognize(self, input_queue,output_queue):
+        self.audio_recognize_handle =speech_recognition_Process(input_queue,output_queue)
         self.audio_recognize_handle.start()
 
 
@@ -72,6 +74,7 @@ class SafeExamProcess(BaseVoicePlay, Process):
     def judeg_answer(self,question_lib_name,number):
         correct_answer = self.voice_name_dict[question_lib_name][number]["answer"]
         print(correct_answer)
+        min_len = 0.8*len(correct_answer)
         all_answers = ''
         begin_date_time = datetime.datetime.now()
         while True:
@@ -92,12 +95,14 @@ class SafeExamProcess(BaseVoicePlay, Process):
                     print("nmd不会")
                     return False
                 all_answers += unit_answers
-                if self.jaccard_judge(all_answers,correct_answer) > 0.5: #如果包含答案
-                    print("回答正确,退出操作")
-                    self.audio_recognize_input_queue.put("process_end")
-                    return True
+
+                if self.jaccard_judge(all_answers,correct_answer) > 0.75: #如果包含答案
+                    if min_len < len(all_answers):
+                        print("回答正确,退出操作")
+                        self.audio_recognize_input_queue.put("process_end")
+                        return True
                 else:
-                    if len(all_answers) > (len(correct_answer)*3):
+                    if len(all_answers) > (len(correct_answer)*2):
                         print("回答错误,退出操作")
                         self.audio_recognize_input_queue.put("process_end")
                         return False
@@ -114,7 +119,7 @@ class SafeExamProcess(BaseVoicePlay, Process):
         for num in choiced_question_list:
             self.play_question_audio("安全知识题库",num - 1)#播放题目
             print("给识别的地址：",self.audio_recognize_output_queue)
-            self.start_audio_recognize(self.audio_recognize_input_queue, self.audio_recognize_output_queue)#开启语音识别线程
+            self.start_audio_long_recognize(self.audio_recognize_input_queue, self.audio_recognize_output_queue)#开启语音识别线程
             if self.judeg_answer("安全知识题库",num - 1):
                 correct_num = correct_num + 1
                 self.play_system_audio("回答正确")

@@ -48,7 +48,7 @@ class AudioRecognizeWebsocket(Process):
         self.receive_socket.bind(("127.0.0.1", 8021))
         self.data_change_lock = threading.Lock()  #线程锁
         self.data_store_buff = []
-        self.max_store_size = 64000 
+        self.max_store_size = 32000 
 
         self.process_end = False
 
@@ -128,6 +128,7 @@ class AudioRecognizeWebsocket(Process):
             self.data_change_lock.release()
 
     def get_data(self,data_size):
+        # print("存储器大小：",len(self.data_store_buff))
         try:
             if(len(self.data_store_buff)>data_size):
                 data = bytes(self.data_store_buff[0:data_size])
@@ -190,7 +191,7 @@ class AudioRecognizeWebsocket(Process):
         while True:
             if self.process_end:
                 break
-            buf = self.get_data(640)
+            buf = self.get_data(1280)
             # 文件结束
             if not buf:
                 continue
@@ -211,7 +212,7 @@ class AudioRecognizeWebsocket(Process):
 
                 d = {"common": self.CommonArgs,
                     "business": self.BusinessArgs,
-                    "data": {"status": 0, "format": "audio/L16;rate=8000",
+                    "data": {"status": 0, "format": "audio/L16;rate=16000",
                             "audio": str(base64.b64encode(buf), 'utf-8'),
                             "encoding": "raw"}}
 
@@ -219,13 +220,13 @@ class AudioRecognizeWebsocket(Process):
                 status = STATUS_CONTINUE_FRAME
             # 中间帧处理
             elif status == STATUS_CONTINUE_FRAME:
-                d = {"data": {"status": 1, "format": "audio/L16;rate=8000",
+                d = {"data": {"status": 1, "format": "audio/L16;rate=16000",
                             "audio": str(base64.b64encode(buf), 'utf-8'),
                             "encoding": "raw"}}
                 self.ws.send(json.dumps(d))
             # 最后一帧处理
             elif status == STATUS_LAST_FRAME:
-                d = {"data": {"status": 2, "format": "audio/L16;rate=8000",
+                d = {"data": {"status": 2, "format": "audio/L16;rate=16000",
                             "audio": str(base64.b64encode(b''), 'utf-8'),
                             "encoding": "raw"}}
                 self.ws.send(json.dumps(d))
@@ -240,8 +241,8 @@ class AudioRecognizeWebsocket(Process):
 #语音识别线程，在机器人被语音唤醒后，接收从摄像头传过来的语音信号
 #上传并将识别结果传给主线程，用于进一步的处理
 class speech_recognition_Process(Process):
-    def __init__(self,cmd_queue):
-        super(speech_recognition_Process, self).__init__()
+    def __init__(self,message_queue_input,audio_recognize_queue_output):
+        super().__init__()
         logging.basicConfig()
         pd = "edu"
         self.end_tag = "{\"end\": true}"
@@ -261,68 +262,19 @@ class speech_recognition_Process(Process):
         signa = base64.b64encode(signa)
         signa = str(signa, 'utf-8')
 
+        self.message_queue_input = message_queue_input #命令输入
+        self.audio_recognize_queue_output = audio_recognize_queue_output #识别结果输出
+
         self.process_is_alive = True #判断进程是否结束了
+        self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.receive_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1) #允许重复绑定端口
+        self.receive_socket.bind(("127.0.0.1", 8021))
         self.data_change_lock = threading.Lock()  #线程锁
-        self.data_store_buff = [] #缓存音频
-        self.max_store_size = 64000 #存两秒的音频 16k采样
-
-        ip_port = ("127.0.0.1",8010)
-        self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #接收音频信号
-        self.receive_socket.bind(ip_port)
-
-        self.main_process_ip = ("127.0.0.1",8011)  #主线程的
-        self.exam_process_ip = ("127.0.0.1",8012)  #考试线程的
-        self.cmd_queue = cmd_queue #接收主进程传入的指令
-        self.cmd_respond = 0 # 0表示都不发，1是发往主线程的命令 2是发往考试组
-        self.result_upload_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #提交数据
+        self.data_store_buff = []
+        self.max_store_size = 32000 
 
         self.ws = create_connection(base_url + "?appid=" + app_id + "&ts=" + ts + "&signa=" + quote(signa))
-        self.trecv = threading.Thread(target=self.recv)
-        self.trecv.start()
-        self.thread_voice = threading.Thread(target=self.recv_voice_data,args=())
-        self.thread_voice.start()
 
-    def cmd_receive(self):
-        while True:
-            try:                    #拉取答案
-                input_cmd = self.queue.get(block=False)
-                if input_cmd == "judeg_respond":
-                    print("ok")
-            except Exception as e:
-                print("ok",e)
-                time.sleep(1)
-
-    def send(self):
-        # CHUNK = 5120#队列长度
-        # FORMAT = pyaudio.paInt16 #保存格式
-        # CHANNELS = 1  #几个通道
-        # RATE = 16000 #采样率，一般8000的采样率能识别出人说的话
-        # record_p = pyaudio.PyAudio() #实例化
-        # #打开获取流
-        # stream = record_p.open(format=FORMAT,
-        #         channels=CHANNELS,
-        #         rate=RATE,
-        #         input=True,
-        #         frames_per_buffer=CHUNK)
-        # stream.stop_stream()
-        # stream.close()
-        # record_p.terminate()
-        try:
-            while True:
-                if not self.process_is_alive:
-                    break
-                chunk = self.get_data(1280)
-                if not chunk:
-                    continue
-                self.ws.send(chunk)
-
-                time.sleep(0.04)
-        finally:
-            pass
-
-        self.ws.send(bytes(self.end_tag.encode('utf-8')))
-        print("send end tag success")
-        self.ws.close()
 
     #接收传过来的声音信息，放入缓存中
     def recv_voice_data(self): 
@@ -349,18 +301,25 @@ class speech_recognition_Process(Process):
             self.data_change_lock.release()
 
     def get_data(self,data_size):
-        if(len(self.data_store_buff)>data_size):
-            data = bytes(self.data_store_buff[0:data_size])
-            try:
-                self.data_change_lock.acquire()
-                del self.data_store_buff[0 : data_size]
-            finally:
-                self.data_change_lock.release()
-            return data
-        else:
+        # print("存储器大小：",len(self.data_store_buff))
+        try:
+            if(len(self.data_store_buff)>data_size):
+                data = bytes(self.data_store_buff[0:data_size])
+                try:
+                    self.data_change_lock.acquire()
+                    del self.data_store_buff[0 : data_size]
+                except Exception:
+                    print("获取数据后删除错误")
+                finally:
+                    self.data_change_lock.release()
+                return data
+            else:
+                return b''
+        except Exception:
+            print("获取数据错误")
             return b''
 
-    def recv(self):
+    def on_message(self):
         try:
             while self.ws.connected:
                 result = str(self.ws.recv())
@@ -385,7 +344,7 @@ class speech_recognition_Process(Process):
                             else:
                                 result_cn += result["cw"][0]["w"]
                         print(result_cn)
-                        self.result_upload_socket.sendto((result_cn).encode("utf-8"), self.main_process_ip)
+                        self.audio_recognize_queue_output.put(result_cn)
 
                 if result_dict["action"] == "error":
                     print("rtasr error: " + result)
@@ -394,31 +353,60 @@ class speech_recognition_Process(Process):
         except websocket.WebSocketConnectionClosedException:
             print("receive result end")
         except Exception:
-            self.close()
+            pass
 
     def run(self):
-        self.send()
+        begin_time = datetime.now()
 
-    def close(self):
-        self.process_is_alive = False
-        print("connection closed")
+        self.receive_recognize_result = threading.Thread(target=self.on_message) #接收识别结果
+        self.receive_recognize_result.daemon = True #设为守护线程
+        self.receive_recognize_result.start()
 
-if __name__ == "__main__":
-    # 测试时候在此处正确填写相关信息即可运行
-    time1 = datetime.now()
-    websocket.enableTrace(False)
-    message_queue = Queue()
-    audio_queue = Queue()
-    testprocess = AudioRecognizeWebsocket(message_queue,audio_queue)
-    testprocess.start()
-    while True:
-        if not testprocess.is_alive():
-            break
+        self.receive_audio_thread = threading.Thread(target=self.recv_voice_data) #接收音频信号
+        self.receive_audio_thread.daemon = True #守护线程
+        self.receive_audio_thread.start()
+
         try:
-            w = audio_queue.get(False)
-            print("外面：",w)
-        except:
+            while True:
+                if not self.process_is_alive:
+                    break
+                if (datetime.now() - begin_time).seconds > 60:
+                    self.audio_recognize_queue_output.put("timeout") #返回超时错误
+                try:
+                    input_cmd = self.message_queue_input.get(False)  #非阻塞，如果空就抛异常
+                    if input_cmd == "process_end":
+                        self.process_is_alive = False
+                except:
+                    pass
+                chunk = self.get_data(1280)
+                if not chunk:
+                    continue
+                self.ws.send(chunk)
+
+                time.sleep(0.04)
+        finally:
             pass
-        time.sleep(0.1)
-    time2 = datetime.now()
-    print(time2-time1)
+
+        self.ws.send(bytes(self.end_tag.encode('utf-8')))
+        print("send end tag success")
+        self.ws.close()
+
+# if __name__ == "__main__":
+#     # 测试时候在此处正确填写相关信息即可运行
+#     time1 = datetime.now()
+#     websocket.enableTrace(False)
+#     message_queue = Queue()
+#     audio_queue = Queue()
+#     testprocess = AudioRecognizeWebsocket(message_queue,audio_queue)
+#     testprocess.start()
+#     while True:
+#         if not testprocess.is_alive():
+#             break
+#         try:
+#             w = audio_queue.get(False)
+#             print("外面：",w)
+#         except:
+#             pass
+#         time.sleep(0.1)
+#     time2 = datetime.now()
+#     print(time2-time1)
