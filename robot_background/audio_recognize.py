@@ -41,7 +41,7 @@ class AudioRecognizeWebsocket(Process):
 
         self.message_queue_input = message_queue_input #命令输入
         self.audio_recognize_queue_output = audio_recognize_queue_output #识别结果输出
-        print("收到的识别队列", self.audio_recognize_queue_output)
+        # print("收到的识别队列", self.audio_recognize_queue_output)
 
         self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.receive_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1) #允许重复绑定端口
@@ -51,9 +51,10 @@ class AudioRecognizeWebsocket(Process):
         self.max_store_size = 32000 
 
         self.process_end = False
-
-        self.ws = create_connection(self.create_url()) #创建链接
-
+        self.process_error = False
+        print("等待网络链")
+        self.ws = create_connection(self.create_url()) #创建链接,这里时候一个阻塞链接，如果没网就会卡在这里
+        print("链接成功")
     # 生成url,不用动，默认就行
     def create_url(self):
         url = 'wss://ws-api.xfyun.cn/v2/iat'
@@ -98,7 +99,7 @@ class AudioRecognizeWebsocket(Process):
                     if code != 0:
                         errMsg = json.loads(message)["message"]
                         print("sid:%s call error:%s code is:%s" % (sid, errMsg, code))
-                        self.process_end = True
+                        self.process_error = True
 
                     else:
                         data = json.loads(message)["data"]["result"]["ws"]
@@ -113,10 +114,13 @@ class AudioRecognizeWebsocket(Process):
 
     def insert_data_tobuff(self, data): #输入bytes吧
         try:
-            self.data_change_lock.acquire()
             length_data = len(data)
             if (len(self.data_store_buff) + length_data) > self.max_store_size:
-                del self.data_store_buff[0 : length_data]
+                try:
+                    self.data_change_lock.acquire()
+                    del self.data_store_buff[0 : length_data]
+                finally:
+                    self.data_change_lock.release()
                 new_data_list = list(data)
                 self.data_store_buff.extend(new_data_list)
             else:
@@ -124,8 +128,6 @@ class AudioRecognizeWebsocket(Process):
                 self.data_store_buff.extend(new_data_list)
         except Exception as e:
             print("insert data error: ",e)
-        finally:
-            self.data_change_lock.release()
 
     def get_data(self,data_size):
         # print("存储器大小：",len(self.data_store_buff))
@@ -161,11 +163,10 @@ class AudioRecognizeWebsocket(Process):
         #         frames_per_buffer=CHUNK)
 
         while True:
-            # if not self.process_is_alive:
-            #     break
             data, addr = self.receive_socket.recvfrom(5000)
+            # print(len(data))
             # self.insert_data_tobuff(data)
-            # data = stream.read(640)
+            # data = stream.read(320)
             self.insert_data_tobuff(data)
         
         # stream.stop_stream()
@@ -175,8 +176,8 @@ class AudioRecognizeWebsocket(Process):
 
     # 收到websocket连接建立的处理
     def run(self):
-        frameSize = 640  # 每一帧的音频大小
-        intervel = 0.04  # 发送音频间隔(单位:s)
+        frameSize = 1280  # 每一帧的音频大小
+        intervel = 0.08  # 发送音频间隔(单位:s)
         status = STATUS_FIRST_FRAME  # 音频的状态信息，标识音频是第一帧，还是中间帧、最后一帧
         begin_time = datetime.now()
 
@@ -189,11 +190,14 @@ class AudioRecognizeWebsocket(Process):
         self.receive_audio_thread.start()
 
         while True:
-            if self.process_end:
-                break
-            buf = self.get_data(1280)
+            if self.process_error:
+                status = STATUS_LAST_FRAME
+                self.audio_recognize_queue_output.put("timeout") #返回超时错误
+            buf = self.get_data(frameSize)
             # 文件结束
-            if not buf:
+            if not buf and (status != STATUS_LAST_FRAME):
+                print("没东西")
+                time.sleep(1)
                 continue
             if (datetime.now() - begin_time).seconds > 60:
                 status = STATUS_LAST_FRAME
@@ -202,7 +206,6 @@ class AudioRecognizeWebsocket(Process):
                 input_cmd = self.message_queue_input.get(False)  #非阻塞，如果空就抛异常
                 if input_cmd == "process_end":
                     status = STATUS_LAST_FRAME
-                    self.process_end = True
             except:
                 pass
             # 第一帧处理
@@ -212,7 +215,7 @@ class AudioRecognizeWebsocket(Process):
 
                 d = {"common": self.CommonArgs,
                     "business": self.BusinessArgs,
-                    "data": {"status": 0, "format": "audio/L16;rate=16000",
+                    "data": {"status": 0, "format": "audio/L16;rate=8000",
                             "audio": str(base64.b64encode(buf), 'utf-8'),
                             "encoding": "raw"}}
 
@@ -220,17 +223,19 @@ class AudioRecognizeWebsocket(Process):
                 status = STATUS_CONTINUE_FRAME
             # 中间帧处理
             elif status == STATUS_CONTINUE_FRAME:
-                d = {"data": {"status": 1, "format": "audio/L16;rate=16000",
+                d = {"data": {"status": 1, "format": "audio/L16;rate=8000",
                             "audio": str(base64.b64encode(buf), 'utf-8'),
                             "encoding": "raw"}}
                 self.ws.send(json.dumps(d))
             # 最后一帧处理
             elif status == STATUS_LAST_FRAME:
-                d = {"data": {"status": 2, "format": "audio/L16;rate=16000",
+                d = {"data": {"status": 2, "format": "audio/L16;rate=8000",
                             "audio": str(base64.b64encode(b''), 'utf-8'),
                             "encoding": "raw"}}
                 self.ws.send(json.dumps(d))
                 time.sleep(1)
+                print("最后一帧")
+                break
             # 模拟音频采样间隔
             time.sleep(intervel)
         self.ws.close()

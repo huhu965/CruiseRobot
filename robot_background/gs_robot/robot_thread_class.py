@@ -206,9 +206,12 @@ class robot_device_data_upload_Thread(Thread):
         self.server_ip = server_ip
         self.main_process = main_process
         self.temperature = {}
-        self.temperature["max"] = 0
-        self.temperature["min"] = 0
-        self.temperature["average"] = 0
+        self.temperature["max_temperature"] = 0
+        self.temperature["min_temperature"] = 0
+        self.temperature["average_temperature"] = 0
+        self.sensor = {}
+        self.sensor['sensor1'] = 0
+        self.sensor['sensor2'] = 0
 
         self.temperature_receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.temperature_receive_socket.bind(("127.0.0.1", 8022))
@@ -229,6 +232,17 @@ class robot_device_data_upload_Thread(Thread):
                 print(e)
                 time.sleep(1)
 
+    def get_max_temperature(self):
+        try:
+            return float(self.temperature["max_temperature"])
+        except Exception as e:
+            print("提交数据线程",e)
+    #返回元组，有两个数据
+    def get_sensor_concentration(self):
+        try:
+            return (float(self.sensor['sensor1']),float(self.sensor['sensor2']))
+        except Exception as e:
+            print("提交数据线程",e)
 
     def device_data_upload(self,data):#向服务器提交数据
         self.send_socket.sendto((data + '\r\n\r\n').encode("utf-8"), self.server_ip);
@@ -243,10 +257,12 @@ class robot_device_data_upload_Thread(Thread):
             device_data.update(position_data)
             device_data.update(self.temperature)
             device_data["time"] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            # print(device_data)
+            self.sensor['sensor1'] = device_data['sensor1']
+            self.sensor['sensor2'] = device_data['sensor2']
             self.device_data_upload(json.dumps(device_data))
         except Exception as e:
-            print(e)
+            print("提交数据线程",e)
+    
     def run(self):
         while True:
             self.device_data_update()

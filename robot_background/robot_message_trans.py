@@ -15,6 +15,7 @@ from gs_robot.general_function import Param_Init
 from gs_robot.cmd import open_video, close_video
 from play_voice import PlayVoice, play_system_audio
 from handle_awake import RobotAwakeProcess
+from warn_thread_class import TemperatureWarnThread, GasWarnThread
 #用于机器人工控机的，把来自服务器的请求转一次发送给导航系统
 #再将导航系统的返回值转发给服务器
 #链接的心跳检测类
@@ -50,8 +51,10 @@ class robot_client_message_process(Client_Socket,Param_Init):
         "Connection": "close",
         }
         self.methods = ["POST","GET"]
-        #print(f"主进程{os.getpid()}")
         self.cmd_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #udp,给摄像头那边发送指令
+        self.thread_process_init()
+
+    def thread_process_init(self):
         #心跳线程
         self.heart_thread = heart_send_Thread(self)
         #更新机器人状态线程
@@ -65,8 +68,21 @@ class robot_client_message_process(Client_Socket,Param_Init):
         self.robot_device_data_upload_thread = robot_device_data_upload_Thread(self,("101.37.16.240",62223))
         #获取声音线程
         self.robot_awake_process = RobotAwakeProcess(("127.0.0.1",8020))
+        self.temperature_thread = TemperatureWarnThread(self.robot_device_data_upload_thread)
+        self.gas_thread = GasWarnThread(self.robot_device_data_upload_thread)
 
+    def thread_process_start(self): #thread 一定要放在run中跑，不然会不在一个进程
+        self.heart_thread.start()
+        self.robot_status_update_thread.start()
+        self.robot_navigate_status_update_thread.start()
+        self.robot_position_update_thread.start()
+        self.status_check_thread.start()
+        self.robot_device_data_upload_thread.start()
+        self.robot_awake_process.start()
+        self.temperature_thread.start()
+        self.gas_thread.start()
 
+    
     #链接成功后向服务器部分注册自己的身份
     def register_identity(self):
         if self.socket_link_flag:
@@ -201,14 +217,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
             self.respond_send(back_data)
     #运行
     def run(self):
-        self.heart_thread.start()
-        self.robot_status_update_thread.start()
-        self.robot_navigate_status_update_thread.start()
-        self.robot_position_update_thread.start()
-        self.status_check_thread.start()
-        self.robot_device_data_upload_thread.start()
-        self.robot_awake_process.start()
-
+        self.thread_process_start()
         # self.connect_server()
         # self.register_identity()#注册身份
         time.sleep(2)

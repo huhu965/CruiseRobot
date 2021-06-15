@@ -40,10 +40,10 @@ class SafeExamProcess(BaseVoicePlay, Process):
     def __init__(self):
         BaseVoicePlay.__init__(self)
         Process.__init__(self)
-        self.question_number = 10
+        self.question_number = 8
         self.audio_recognize_output_queue = Queue()
         self.audio_recognize_input_queue = Queue()
-        self.exam_number = 5
+        self.exam_number = 4
         
     def jaccard_judge(self,input_answer, correct_answer):
         a = set(list(input_answer))
@@ -75,11 +75,12 @@ class SafeExamProcess(BaseVoicePlay, Process):
         correct_answer = self.voice_name_dict[question_lib_name][number]["answer"]
         print(correct_answer)
         min_len = 0.8*len(correct_answer)
+        print(min_len)
         all_answers = ''
         begin_date_time = datetime.datetime.now()
         while True:
             try:
-                if (datetime.datetime.now() - begin_date_time).seconds > 60:
+                if (datetime.datetime.now() - begin_date_time).seconds > 20:
                     self.audio_recognize_input_queue.put("process_end")
                     print("回答超时，退出操作")
                     return False
@@ -90,24 +91,24 @@ class SafeExamProcess(BaseVoicePlay, Process):
                 print("ghghg:" + unit_answers)
                 if unit_answers == 'timeout':
                     return False
-                if "不会" in unit_answers:
+                if "不知道" in unit_answers:
                     self.audio_recognize_input_queue.put("process_end")
-                    print("nmd不会")
+                    # print("nmd不会")
                     return False
                 all_answers += unit_answers
 
                 if self.jaccard_judge(all_answers,correct_answer) > 0.75: #如果包含答案
                     if min_len < len(all_answers):
-                        print("回答正确,退出操作")
+                        # print("回答正确,退出操作")
                         self.audio_recognize_input_queue.put("process_end")
                         return True
                 else:
-                    if len(all_answers) > (len(correct_answer)*2):
-                        print("回答错误,退出操作")
+                    if len(all_answers) > (1.2*len(correct_answer)):
+                        # print("回答错误,退出操作")
                         self.audio_recognize_input_queue.put("process_end")
                         return False
             except Exception as e:
-                print("ok",e)
+                # print("ok",e)
                 time.sleep(1)
 
     def run(self):
@@ -118,8 +119,7 @@ class SafeExamProcess(BaseVoicePlay, Process):
         #考试流程
         for num in choiced_question_list:
             self.play_question_audio("安全知识题库",num - 1)#播放题目
-            print("给识别的地址：",self.audio_recognize_output_queue)
-            self.start_audio_long_recognize(self.audio_recognize_input_queue, self.audio_recognize_output_queue)#开启语音识别线程
+            self.start_audio_recognize(self.audio_recognize_input_queue, self.audio_recognize_output_queue)#开启语音识别线程
             if self.judeg_answer("安全知识题库",num - 1):
                 correct_num = correct_num + 1
                 self.play_system_audio("回答正确")
@@ -150,7 +150,7 @@ class RobotAwakeProcess(Process,BaseVoicePlay):
             try:
                 if (datetime.datetime.now() - begin_date_time).seconds > 30:
                     self.audio_recognize_input_queue.put("process_end")
-                    print("恢复休眠状态")
+                    # print("恢复休眠状态")
                     break
             except Exception as e:
                 print(e)
@@ -159,7 +159,7 @@ class RobotAwakeProcess(Process,BaseVoicePlay):
                 print("ghghg:" + unit_answers)
                 all_answers += unit_answers
                 if "开始考核" in all_answers: #如果包含答案
-                    print("考核操作")
+                    # print("考核操作")
                     self.audio_recognize_input_queue.put("process_end")
                     exam_process = SafeExamProcess()
                     exam_process.start()
@@ -168,8 +168,12 @@ class RobotAwakeProcess(Process,BaseVoicePlay):
                 elif "再见" in all_answers:
                     self.audio_recognize_input_queue.put("process_end")
                     break
+                elif "timeout" in all_answers:
+                    time.sleep(3)
+                    self.audio_recognize_handle = None
+                    break
             except Exception as e:
-                print("ok",e)
+                # print("ok",e)
                 time.sleep(1)
 
     def voice_sleep(self):
@@ -192,14 +196,15 @@ class RobotAwakeProcess(Process,BaseVoicePlay):
                     self.start_audio_recognize(self.audio_recognize_input_queue, self.audio_recognize_output_queue)#开启语音识别线程
                     self.cmd_slect()
                     self.voice_sleep()
-# if __name__ == "__main__":
-#     # 测试时候在此处正确填写相关信息即可运行
-#     time1 = datetime.datetime.now()
-#     testprocess = SafeExamProcess()
-#     testprocess.start()
-#     while True:
-#         if not testprocess.is_alive():
-#             break
-#         time.sleep(1)
-#     time2 = datetime.datetime.now()
-#     print(time2-time1)
+
+if __name__ == "__main__":
+    # 测试时候在此处正确填写相关信息即可运行
+    time1 = datetime.datetime.now()
+    testprocess = SafeExamProcess()
+    testprocess.start()
+    while True:
+        if not testprocess.is_alive():
+            break
+        time.sleep(1)
+    time2 = datetime.datetime.now()
+    print(time2-time1)

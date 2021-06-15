@@ -54,7 +54,6 @@ class PlayVoice(Process):
         self.record_p.terminate()
         self._is_playing = False
 
-
 def play_system_audio(name):
     with open("question_param.json","r") as file: #读入题目
         voice_name_dict = json.load(file)
