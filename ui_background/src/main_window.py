@@ -27,6 +27,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow, Callback):
         with open("robot_map_datas.json","r") as file:
             self.robot_map_datas = json.load(file)
         with open("task_queue.json","r") as file:
+   
             self.navigete_task_queue = json.load(file)
             
         self.max_map = False

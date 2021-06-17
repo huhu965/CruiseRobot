@@ -1,4 +1,5 @@
 import json
+from multiprocessing import Queue
 
 PTZ_Command = {
     "ZOOM_IN" : 11, #倍率变大
@@ -35,5 +36,7 @@ class Param_Init(object):
         self.trumpet_process = None
         self.robot_move_thread = None
         self.task_queue_run_thread = None
+        self.speak_process = None
         #标志变量
         self.task_queue_run = False #存活状态
+        self.speak_message_queue = Queue()

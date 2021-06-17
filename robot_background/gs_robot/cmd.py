@@ -106,14 +106,21 @@ def power_off(self, param = ""):
     return back_data
 
 
-# def handle_open_light(self):
-#     try:
-#         back_data = self.respond_message_creat()
-#         self.light_process = subprocess.Popen("/home/os/testgpio -p 2 -s 1",shell=True)#启动解码程序
-#     except:
-#         back_data = self.respond_message_creat(msg = "light error")
-#     finally:
-#         return back_data
+def open_speak(self):
+    try:
+        back_data = self.respond_message_creat()
+        self.speak_process =SpeakProcess(self.speak_message_queue)
+        self.speak_process.start()
+    except:
+        back_data = self.respond_message_creat(msg = "讲话接收线程打开错误")
+    finally:
+        return back_data
+
+def close_speak(self):
+    if self.speak_process != None:
+        self.speak_message_queue.put("process_end")
+        time.sleep(2)
+        self.speak_process = None
 
 # def handle_close_light(self):
 #     try:

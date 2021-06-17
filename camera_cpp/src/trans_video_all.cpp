@@ -93,19 +93,12 @@ void *video_handle_func(void* args){
     ablityparam.lpCondBuffer = NULL;
     ablityparam.lpStatusBuffer =(char*)"ThermalCap";
 
-    // _connect_server(_camera_param_ptr); //链接服务器
+    _connect_server(_camera_param_ptr); //链接服务器
     _login_camera(_camera_param_ptr); //登录摄像头
     if(!_camera_param_ptr->have_voice){
-        cout<<"长链接启动"<<endl;
-        // if(!NET_DVR_GetSTDAbility(_camera_param_ptr->lUserID, NET_DVR_GET_THERMAL_CAPABILITIES, &ablityparam)){
-        //     cout<<"红外测温"<<NET_DVR_GetLastError()<<endl;
-        // }
-        // else{
-        //     cout<<"keyi"<<endl;
-        // }
         _read_temperature(_camera_param_ptr);
     }
-    _video_begin(_camera_param_ptr);
+    // _video_begin(_camera_param_ptr);
     while(true){
         memset(&_recv_head, 0, sizeof(HeadData)); //清空
         recv(_camera_param_ptr->socket_tcp, (char*)&_recv_head, sizeof(HeadData), MSG_WAITALL);

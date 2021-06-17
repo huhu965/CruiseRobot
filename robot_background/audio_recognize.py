@@ -42,13 +42,9 @@ class AudioRecognizeWebsocket(Process):
         self.message_queue_input = message_queue_input #命令输入
         self.audio_recognize_queue_output = audio_recognize_queue_output #识别结果输出
         # print("收到的识别队列", self.audio_recognize_queue_output)
-
-        self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.receive_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1) #允许重复绑定端口
-        self.receive_socket.bind(("127.0.0.1", 8021))
         self.data_change_lock = threading.Lock()  #线程锁
         self.data_store_buff = []
-        self.max_store_size = 32000 
+        self.max_store_size = 64000 
 
         self.process_end = False
         self.process_error = False
@@ -180,6 +176,9 @@ class AudioRecognizeWebsocket(Process):
         intervel = 0.08  # 发送音频间隔(单位:s)
         status = STATUS_FIRST_FRAME  # 音频的状态信息，标识音频是第一帧，还是中间帧、最后一帧
         begin_time = datetime.now()
+        self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.receive_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1) #允许重复绑定端口
+        self.receive_socket.bind(("127.0.0.1", 8021))
 
         self.receive_recognize_result = threading.Thread(target=self.on_message) #接收识别结果
         self.receive_recognize_result.daemon = True #设为守护线程
@@ -193,12 +192,6 @@ class AudioRecognizeWebsocket(Process):
             if self.process_error:
                 status = STATUS_LAST_FRAME
                 self.audio_recognize_queue_output.put("timeout") #返回超时错误
-            buf = self.get_data(frameSize)
-            # 文件结束
-            if not buf and (status != STATUS_LAST_FRAME):
-                print("没东西")
-                time.sleep(1)
-                continue
             if (datetime.now() - begin_time).seconds > 60:
                 status = STATUS_LAST_FRAME
                 self.audio_recognize_queue_output.put("timeout") #返回超时错误
@@ -208,6 +201,12 @@ class AudioRecognizeWebsocket(Process):
                     status = STATUS_LAST_FRAME
             except:
                 pass
+            buf = self.get_data(frameSize)
+            # 文件结束
+            if not buf and (status != STATUS_LAST_FRAME):
+                print("没东西")
+                time.sleep(1)
+                continue
             # 第一帧处理
             # 发送第一帧音频，带business 参数
             # appid 必须带上，只需第一帧发送

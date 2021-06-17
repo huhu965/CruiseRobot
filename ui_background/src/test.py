@@ -38,8 +38,8 @@ import os
 # cv2.imshow("enhanced",decimg)
 # cv2.waitKey(0)
 
-param = {"map_name":"factoryall","position_name":"1xuncha0"}
-response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['navigate']}", params = param, timeout=5)
+# param = {"map_name":"factoryall","position_name":"1xuncha0"}
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['navigate']}", params = param, timeout=5)
 
 # param = {"map_name":"factory","init_point_name":"End"}
 
@@ -67,7 +67,7 @@ response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{rob
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_video']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['close_video']}", timeout=5)
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
+response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
 
 # # 查看地图的点列表
 

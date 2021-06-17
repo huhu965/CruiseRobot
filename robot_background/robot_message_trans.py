@@ -218,11 +218,11 @@ class robot_client_message_process(Client_Socket,Param_Init):
     #运行
     def run(self):
         self.thread_process_start()
-        # self.connect_server()
-        # self.register_identity()#注册身份
+        self.connect_server()
+        self.register_identity()#注册身份
         time.sleep(2)
         play_system_audio('初始化完成')
-        # open_video(self, robot_usr = True ) #打开视频
+        open_video(self, robot_usr = True ) #打开视频
         while True:
             try:
                 request_data = self.receive_request()
@@ -239,7 +239,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
 
 def main():
     play_system_audio('开始初始化')
-    # time.sleep(140)
+    time.sleep(140)
     server_ip =  ('101.37.16.240', 62222)#服务器的公网地址和端口
     request_process = robot_client_message_process(server_ip)
     request_process.run()

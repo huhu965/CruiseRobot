@@ -6,7 +6,9 @@ import requests
 import socket
 import json
 import datetime
+import pyaudio
 from threading import Thread
+from multiprocessing import Process
 from gs_robot.general_function import *
 #巡航任务线程
 class robot_scan_mode_process(Thread):
@@ -313,4 +315,115 @@ class robot_position_update_Thread(Thread):
                 self.update_data(response.content)
                 time.sleep(2)
             except Exception as e:
-                print(e)       
+                print(e)  
+
+class SpeakProcess(Process):
+    # 初始化
+    def __init__(self,message_queue_input):
+        super().__init__()
+        self.server_ip = ('127.0.0.1', 62222)
+        self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.data_change_lock = threading.Lock()  #线程锁
+        self.data_store_buff = []
+        self.max_store_size = 32000 
+        self.frameSize = 1280  # 每一帧的音频大小
+        self.message_queue_input = message_queue_input
+
+    def connect_server(self):
+        while True: #直到连接上服务器才进行下一步
+            try:
+                self.receive_socket.connect(self.server_ip)#尝试链接服务器
+                break
+            except Exception as e:
+                print(e,self.server_ip)
+                time.sleep(10)
+
+    def insert_data_tobuff(self, data): #输入bytes吧
+        try:
+            length_data = len(data)
+            if (len(self.data_store_buff) + length_data) > self.max_store_size:
+                try:
+                    self.data_change_lock.acquire()
+                    del self.data_store_buff[0 : length_data]
+                finally:
+                    self.data_change_lock.release()
+                new_data_list = list(data)
+                self.data_store_buff.extend(new_data_list)
+            else:
+                new_data_list = list(data)
+                self.data_store_buff.extend(new_data_list)
+        except Exception as e:
+            print("insert data error: ",e)
+
+    def get_data(self,data_size):
+        try:
+            if(len(self.data_store_buff)>data_size):
+                data = bytes(self.data_store_buff[0:data_size])
+                try:
+                    self.data_change_lock.acquire()
+                    del self.data_store_buff[0 : data_size]
+                except Exception:
+                    print("获取数据后删除错误")
+                finally:
+                    self.data_change_lock.release()
+                return data
+            else:
+                return b''
+        except Exception:
+            print("获取数据错误")
+            return b''
+        
+
+    def recv_voice_data(self):
+        self.connect_server()
+        content = b"robot_speak \r\n"
+        self.receive_socket.sendall(content)#注册身份
+        while True:
+            try:
+                data = self.recv_socket.recv(self.frameSize,0x100)  #接收服务器发的请求
+                if len(data) ==0:
+                    break
+                self.insert_data_tobuff(data)
+            except Exception as e:
+                print("讲话进程接收",e)
+
+    # 收到websocket连接建立的处理
+    def run(self):
+        begin_time = datetime.now()
+
+        self.receive_audio_thread = threading.Thread(target=self.recv_voice_data) #接收音频信号
+        self.receive_audio_thread.daemon = True #守护线程
+        self.receive_audio_thread.start()
+
+        CHUNK = 5120#队列长度
+        FORMAT = pyaudio.paInt16 #保存格式
+        CHANNELS = 1  #几个通道
+        RATE = 8000 #采样率，一般8000的采样率能识别出人说的话
+        record_p = pyaudio.PyAudio() #实例化
+        #打开获取流
+        stream = record_p.open(format=FORMAT,
+                channels=CHANNELS,
+                rate=RATE,
+                output=True,
+                frames_per_buffer=CHUNK)
+
+        while True:
+            try:
+                input_cmd = self.message_queue_input.get(False)  #非阻塞，如果空就抛异常
+                if input_cmd == "process_end":
+                    break
+            except:
+                pass
+            buf = self.get_data(self.frameSize)
+            # 文件结束
+            if not buf:
+                print("没东西")
+                time.sleep(1)
+                continue
+            stream.write(buf)
+
+        self.receive_socket.close()
+        stream.stop_stream()
+        stream.close()
+        record_p.terminate()
+        print("关闭讲话")   

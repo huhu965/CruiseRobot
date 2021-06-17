@@ -31,6 +31,9 @@ class BaseVoicePlay(object):
     def start_audio_recognize(self, input_queue,output_queue):
         self.audio_recognize_handle =AudioRecognizeWebsocket(input_queue,output_queue)
         self.audio_recognize_handle.start()
+    def close_audio_recognize(self):
+        if self.audio_recognize_handle != None:
+            self.audio_recognize_handle = None
     def start_audio_long_recognize(self, input_queue,output_queue):
         self.audio_recognize_handle =speech_recognition_Process(input_queue,output_queue)
         self.audio_recognize_handle.start()
@@ -75,7 +78,7 @@ class SafeExamProcess(BaseVoicePlay, Process):
         correct_answer = self.voice_name_dict[question_lib_name][number]["answer"]
         print(correct_answer)
         min_len = 0.8*len(correct_answer)
-        print(min_len)
+        # print(min_len)
         all_answers = ''
         begin_date_time = datetime.datetime.now()
         while True:
@@ -88,7 +91,7 @@ class SafeExamProcess(BaseVoicePlay, Process):
                 print(e)
             try:
                 unit_answers = self.audio_recognize_output_queue.get(False)
-                print("ghghg:" + unit_answers)
+                # print("ghghg:" + unit_answers)
                 if unit_answers == 'timeout':
                     return False
                 if "不知道" in unit_answers:
@@ -126,6 +129,7 @@ class SafeExamProcess(BaseVoicePlay, Process):
             else:
                 self.play_system_audio("回答错误")
             time.sleep(2)
+            self.close_audio_recognize()
 
         self.play_system_audio("考核结束")
         if (float(correct_num)/self.exam_number) > 0.59:
@@ -156,7 +160,7 @@ class RobotAwakeProcess(Process,BaseVoicePlay):
                 print(e)
             try:
                 unit_answers = self.audio_recognize_output_queue.get(False)
-                print("ghghg:" + unit_answers)
+                #print("ghghg:" + unit_answers)
                 all_answers += unit_answers
                 if "开始考核" in all_answers: #如果包含答案
                     # print("考核操作")
@@ -182,29 +186,32 @@ class RobotAwakeProcess(Process,BaseVoicePlay):
     def run(self):
         self.receive_socket.bind(self.ip_port)
         while True:
-            data, addr = self.receive_socket.recvfrom(5000)
-            if data.startswith(b'GET'):
-                try:#分割url
-                    request_head = data.decode("utf-8").split("\r\n")[0]
-                    url = request_head.split(' ')[1]
-                    space, name, modules, func = url.split("/")
-                except Exception as e:
-                    print(e)
-                    continue
-                if func == 'voice_awake':
-                    self.play_system_audio("响应唤醒")
-                    self.start_audio_recognize(self.audio_recognize_input_queue, self.audio_recognize_output_queue)#开启语音识别线程
-                    self.cmd_slect()
-                    self.voice_sleep()
+            try:
+                data, addr = self.receive_socket.recvfrom(5000)
+                if data.startswith(b'GET'):
+                    try:#分割url
+                        request_head = data.decode("utf-8").split("\r\n")[0]
+                        url = request_head.split(' ')[1]
+                        space, name, modules, func = url.split("/")
+                    except Exception as e:
+                        print(e)
+                        continue
+                    if func == 'voice_awake':
+                        self.play_system_audio("响应唤醒")
+                        self.start_audio_recognize(self.audio_recognize_input_queue, self.audio_recognize_output_queue)#开启语音识别线程
+                        self.cmd_slect()
+                        self.voice_sleep()
+            except Exception:
+                pass
 
-if __name__ == "__main__":
-    # 测试时候在此处正确填写相关信息即可运行
-    time1 = datetime.datetime.now()
-    testprocess = SafeExamProcess()
-    testprocess.start()
-    while True:
-        if not testprocess.is_alive():
-            break
-        time.sleep(1)
-    time2 = datetime.datetime.now()
-    print(time2-time1)
+# if __name__ == "__main__":
+#     # 测试时候在此处正确填写相关信息即可运行
+#     time1 = datetime.datetime.now()
+#     testprocess = SafeExamProcess()
+#     testprocess.start()
+#     while True:
+#         if not testprocess.is_alive():
+#             break
+#         time.sleep(1)
+#     time2 = datetime.datetime.now()
+#     print(time2-time1)
