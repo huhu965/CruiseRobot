@@ -99,7 +99,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
                 if len(fhead) == 0: #基本上是服务器端关闭了，拖着等重连启动
                     return b''
                 else:  #接收到任何消息都可以作为心跳的回应，认为链接仍在
-                    print("xi")
+                    # print("xi")
                     self.update_last_receive_time()
                 length, = struct.unpack('I', fhead)
                 if length == 0:

@@ -4,7 +4,7 @@ import datetime
 import json
 import struct
 import time
-from play_voice import PlayVoice
+from play_voice import PlayVoice, play_system_audio
 
 # 客户端联网的基类
 # 链接服务器功能
@@ -28,8 +28,7 @@ class Client_Socket(object):
                 break
             except Exception as e:
                 print(e,self.server_ip)
-                p = PlayVoice("链接服务器失败")
-                p.start()
+                play_system_audio("链接服务器失败")
                 time.sleep(10)
         self.socket_link_flag = True
         self.update_last_receive_time()

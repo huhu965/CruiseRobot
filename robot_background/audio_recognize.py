@@ -48,9 +48,7 @@ class AudioRecognizeWebsocket(Process):
 
         self.process_end = False
         self.process_error = False
-        print("等待网络链")
         self.ws = create_connection(self.create_url()) #创建链接,这里时候一个阻塞链接，如果没网就会卡在这里
-        print("链接成功")
     # 生成url,不用动，默认就行
     def create_url(self):
         url = 'wss://ws-api.xfyun.cn/v2/iat'
@@ -94,7 +92,7 @@ class AudioRecognizeWebsocket(Process):
                     sid = json.loads(message)["sid"]
                     if code != 0:
                         errMsg = json.loads(message)["message"]
-                        print("sid:%s call error:%s code is:%s" % (sid, errMsg, code))
+                        # print("sid:%s call error:%s code is:%s" % (sid, errMsg, code))
                         self.process_error = True
 
                     else:
@@ -204,7 +202,7 @@ class AudioRecognizeWebsocket(Process):
             buf = self.get_data(frameSize)
             # 文件结束
             if not buf and (status != STATUS_LAST_FRAME):
-                print("没东西")
+                # print("没东西")
                 time.sleep(1)
                 continue
             # 第一帧处理
@@ -233,13 +231,13 @@ class AudioRecognizeWebsocket(Process):
                             "encoding": "raw"}}
                 self.ws.send(json.dumps(d))
                 time.sleep(1)
-                print("最后一帧")
+                # print("最后一帧")
                 break
             # 模拟音频采样间隔
             time.sleep(intervel)
         self.ws.close()
         self.receive_socket.close()
-        print("关闭端口")
+        # print("关闭端口")
 
 
 #语音识别线程，在机器人被语音唤醒后，接收从摄像头传过来的语音信号
