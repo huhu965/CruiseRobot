@@ -1,3 +1,9 @@
+# /* 
+# * @Author: Hu Ziwei
+#  * @Date: 2021-07-06 23:46:54
+#  * @Last Modified by: Hu Ziwei
+#  * @Last Modified time: 2021-07-06 23:46:54 
+# */
 import socketserver
 import threading
 import time
@@ -9,7 +15,6 @@ import datetime
 from threading import Thread
 import json
 import redis
-
 socket_dict = {} #存socket链接的
 robot_tcp_use_lock = threading.Lock()
 redis_db = redis.Redis(host='127.0.0.1', port=6379, db=0,decode_responses=True)
@@ -32,6 +37,65 @@ class RecviveRobotData(Thread):
                 redis_db.hset("last_status", "last_status_data", data_str[:-4])#每次更新
             except Exception as e:
                 print(e)
+        self.receive_socket.shutdown(2)
+        self.receive_socket.close()
+
+class RecviveRobotVideoNormal(Thread): #接收彩色视频
+    def __init__(self):
+        super(RecviveRobotData, self).__init__()
+        self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #udp
+        host = socket.gethostname()
+        self.receive_socket.bind((host,62220))
+        self.last_stamp = 0
+        self.target_client_identify = "soft_video"
+
+    def run(self):
+        global socket_dict
+        while True:
+            try:
+                data, addr = self.receive_socket.recvfrom(10000)
+                stamp = struct.unpack('I', data[0:4]) #解算时间戳
+                if stamp >= self.last_stamp:
+                    self.last_stamp = stamp
+                    if len(data) > 4 and (self.target_client_identify in socket_dict.keys()): #不只有时间戳，还有数据
+                        fhead = struct.pack('II',2,len(data)-4)
+                        socket_dict[self.target_client_identify].request.send(fhead)
+                        socket_dict[self.target_client_identify].request.sendall(data[4:])
+                elif stamp < (self.last_stamp - 15): #如果时间戳小于之前的15次，可以认为是一次新的信息传输
+                    self.last_stamp = stamp
+            except Exception as e:
+                print(e)
+        self.receive_socket.shutdown(2)
+        self.receive_socket.close()
+        
+
+class RecviveRobotVideoInfrared(Thread): #接收彩色视频
+    def __init__(self):
+        super(RecviveRobotData, self).__init__()
+        self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #udp
+        host = socket.gethostname()
+        self.receive_socket.bind((host,62221))
+        self.last_stamp = 0
+        self.target_client_identify = "soft_video_red"
+
+    def run(self):
+        global socket_dict
+        while True:
+            try:
+                data, addr = self.receive_socket.recvfrom(10000)
+                stamp = struct.unpack('I', data[0:4]) #解算时间戳
+                if stamp >= self.last_stamp:
+                    self.last_stamp = stamp
+                    if len(data) > 4 and (self.target_client_identify in socket_dict.keys()): #不只有时间戳，还有数据
+                        fhead = struct.pack('II',2,len(data)-4)
+                        socket_dict[self.target_client_identify].request.send(fhead)
+                        socket_dict[self.target_client_identify].request.sendall(data[4:])
+                elif stamp < (self.last_stamp - 15): #如果时间戳小于之前的15次，可以认为是一次新的信息传输
+                    self.last_stamp = stamp
+            except Exception as e:
+                print(e)
+        self.receive_socket.shutdown(2)
+        self.receive_socket.close()
 
 class RobotLink:
     lock = threading.Lock()
@@ -120,6 +184,10 @@ class UserHandler(socketserver.BaseRequestHandler):
             self.soft_video_process()
         elif self.identity == "soft_video_red":
             self.soft_video_red_process()
+        elif self.identity == "robot_speak":
+            self.robot_speak_process()
+        elif self.identity == "client_speak":
+            self.client_speak_process()
 
     #本功能主要是处理机器人客户端的链接维持
     #根据心跳检测判断客户端tcp链接是否断开或者不可用
@@ -279,10 +347,27 @@ class UserHandler(socketserver.BaseRequestHandler):
         self.video_message_process("robot_video_red")
         del socket_dict[self.identity]  #断开连接后从链接字典中删除
 
+    #接收音频发送给机器人
+    def client_speak_process(self):
+        global socket_dict   #tcp链接存储
+        #循环接收信息并转发
+        self.video_message_process("robot_speak")
+        del socket_dict[self.identity]  #断开连接后从链接字典中删除
+
+    #暂时没锤子用，就转发一个开始结束信息
+    def robot_speak_process(self):
+        global socket_dict   #tcp链接存储
+        self.video_message_process("client_speak")
+        del socket_dict[self.identity]  #断开连接后从链接字典中删除
+
 if __name__ == '__main__':
     host = socket.gethostname()
-    # rt = RecviveRobotData((host, 62223)) #udp 接收上传数据的
-    # rt.start()
-    with ThreadedTCPServer(("10.7.5.127", 62222), UserHandler) as server:
+    rt = RecviveRobotData((host, 62223)) #udp 接收上传数据的
+    rn = RecviveRobotVideoNormal()
+    ri = RecviveRobotVideoInfrared()
+    rt.start()
+    rn.start()
+    ri.start()
+    with ThreadedTCPServer((host, 62222), UserHandler) as server:
         print(f'robot trans server is running...')
         server.serve_forever()

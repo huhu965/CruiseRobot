@@ -73,6 +73,11 @@ typedef struct
     int voice_upload_socket;//音频传输
     struct sockaddr_in voice_addr; //服务器地址
     struct sockaddr_in voice_cmd_addr;//唤醒后给主线程发送唤醒指令
+
+    char data_buff[10000];  //视频信息缓冲
+    int data_buff_size;
+    int data_stamp;
+
 }CameraParam,* CameraParamPtr;
 
 //语音识别相关参数，结构体不能给初值

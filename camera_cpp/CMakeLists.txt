@@ -35,7 +35,7 @@ target_link_libraries(video_decode ${OpenCV_LIBS})
 target_link_libraries(video_decode libPlayCtrl.so libSuperRender.so)
 target_link_libraries(video_decode pthread.so)
 target_link_libraries(video_decode libmsc.so)
-target_link_libraries(video_trans libw_ivw.so)
+target_link_libraries(video_decode libw_ivw.so)
 
 # add_executable(red_video_trans ./src/main_local.cpp)
 # target_link_libraries(red_video_trans libhcnetsdk.so)

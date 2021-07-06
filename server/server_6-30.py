@@ -120,6 +120,10 @@ class UserHandler(socketserver.BaseRequestHandler):
             self.soft_video_process()
         elif self.identity == "soft_video_red":
             self.soft_video_red_process()
+        elif self.identity == "robot_speak":
+            self.robot_speak_process()
+        elif self.identity == "client_speak":
+            self.client_speak_process()
 
     #本功能主要是处理机器人客户端的链接维持
     #根据心跳检测判断客户端tcp链接是否断开或者不可用
@@ -279,10 +283,24 @@ class UserHandler(socketserver.BaseRequestHandler):
         self.video_message_process("robot_video_red")
         del socket_dict[self.identity]  #断开连接后从链接字典中删除
 
+    #接收音频发送给机器人
+    def client_speak_process(self):
+        global socket_dict   #tcp链接存储
+        #循环接收信息并转发
+        self.video_message_process("robot_speak")
+        del socket_dict[self.identity]  #断开连接后从链接字典中删除
+
+    #暂时没锤子用，就转发一个开始结束信息
+    def robot_speak_process(self):
+        global socket_dict   #tcp链接存储
+        self.video_message_process("client_speak")
+        del socket_dict[self.identity]  #断开连接后从链接字典中删除
+
 if __name__ == '__main__':
     host = socket.gethostname()
+    print(host)
     # rt = RecviveRobotData((host, 62223)) #udp 接收上传数据的
     # rt.start()
-    with ThreadedTCPServer(("10.7.5.127", 62222), UserHandler) as server:
+    with ThreadedTCPServer(("127.0.0.1", 62222), UserHandler) as server:
         print(f'robot trans server is running...')
         server.serve_forever()

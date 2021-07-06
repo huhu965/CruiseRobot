@@ -151,7 +151,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
 
     def POST(self, request_data):
         try:#分割url
-            request_head = request_data.decode("utf-8").split("\r\n")[0]
+            request_head = request_data.split(b"\r\n")[0].decode("utf-8")
             url = request_head.split(' ')[1]
             if '?' in url:
                 url_cmd, url_param = url.split('?') #拆分url
@@ -174,7 +174,8 @@ class robot_client_message_process(Client_Socket,Param_Init):
         except Exception as e:
             back_data = self.respond_message_creat(msg = f"modules handle error:{e}")
         finally:
-            self.respond_send(back_data)
+            if len(back_data) > 0:
+                self.respond_send(back_data)
 
     def GET(self, request_data):
         try:#分割url
@@ -202,7 +203,8 @@ class robot_client_message_process(Client_Socket,Param_Init):
         except Exception as e:
             back_data = self.respond_message_creat(msg = f"modules handle error:{e}")
         finally:
-            self.respond_send(back_data)
+            if len(back_data) > 0:
+                self.respond_send(back_data)
     #处理请求
     def process_request(self, request_data):
         #提取url和method
@@ -218,6 +220,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
     #运行
     def run(self):
         self.thread_process_start()
+        # self.heart_thread.start() ###########
         self.connect_server()
         self.register_identity()#注册身份
         time.sleep(2)
@@ -235,6 +238,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
             except Exception as e:
                 print(e)
         close_video(self, robot_usr = True)
+        self.recv_socket.shutdown(2)
         self.recv_socket.close()
 
 def main():

@@ -160,10 +160,10 @@ def handle_high_speed(self):
 
 def handle_left_up(self):
     request_params = []
-    param = {"dwPTZCommand":PTZ_Command["TILT_UP"],"dwSpeed":1,"dwStop":0}
+    param = {"dwPTZCommand":PTZ_Command["TILT_UP"],"dwSpeed":2,"dwStop":0}
     request_param = creat_request_param("Get", "ptz_control",param)
     request_params.append(request_param)
-    param = {"dwPTZCommand":PTZ_Command["TILT_UP"],"dwSpeed":1,"dwStop":1}
+    param = {"dwPTZCommand":PTZ_Command["TILT_UP"],"dwSpeed":2,"dwStop":1}
     request_param = creat_request_param("Get", "ptz_control",param)
     request_params.append(request_param)
     
@@ -173,10 +173,10 @@ def handle_left_up(self):
 
 def handle_left_down(self):
     request_params = []
-    param = {"dwPTZCommand":PTZ_Command["TILT_DOWN"],"dwSpeed":1,"dwStop":0}
+    param = {"dwPTZCommand":PTZ_Command["TILT_DOWN"],"dwSpeed":2,"dwStop":0}
     request_param = creat_request_param("Get", "ptz_control",param)
     request_params.append(request_param)
-    param = {"dwPTZCommand":PTZ_Command["TILT_DOWN"],"dwSpeed":1,"dwStop":1}
+    param = {"dwPTZCommand":PTZ_Command["TILT_DOWN"],"dwSpeed":2,"dwStop":1}
     request_param = creat_request_param("Get", "ptz_control",param)
     request_params.append(request_param)
     
@@ -186,10 +186,10 @@ def handle_left_down(self):
 
 def handle_left_left(self):
     request_params = []
-    param = {"dwPTZCommand":PTZ_Command["PAN_LEFT"],"dwSpeed":1,"dwStop":0}
+    param = {"dwPTZCommand":PTZ_Command["PAN_LEFT"],"dwSpeed":2,"dwStop":0}
     request_param = creat_request_param("Get", "ptz_control",param)
     request_params.append(request_param)
-    param = {"dwPTZCommand":PTZ_Command["PAN_LEFT"],"dwSpeed":1,"dwStop":1}
+    param = {"dwPTZCommand":PTZ_Command["PAN_LEFT"],"dwSpeed":2,"dwStop":1}
     request_param = creat_request_param("Get", "ptz_control",param)
     request_params.append(request_param)
     print(request_params)
@@ -200,10 +200,10 @@ def handle_left_left(self):
 
 def handle_left_right(self):
     request_params = []
-    param = {"dwPTZCommand":PTZ_Command["PAN_RIGHT"],"dwSpeed":1,"dwStop":0}
+    param = {"dwPTZCommand":PTZ_Command["PAN_RIGHT"],"dwSpeed":2,"dwStop":0}
     request_param = creat_request_param("Get", "ptz_control",param)
     request_params.append(request_param)
-    param = {"dwPTZCommand":PTZ_Command["PAN_RIGHT"],"dwSpeed":1,"dwStop":1}
+    param = {"dwPTZCommand":PTZ_Command["PAN_RIGHT"],"dwSpeed":2,"dwStop":1}
     request_param = creat_request_param("Get", "ptz_control",param)
     request_params.append(request_param)
     

@@ -66,27 +66,29 @@ import os
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_light']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_video']}", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}/gs-robot/cmd/open_video_nointer", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['close_video']}", timeout=5)
 response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
-
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['gps_raw']}", timeout=5)
 # # 查看地图的点列表
 
 # param = {"map_name":"fsactoryall","type":2}
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['positions']}", params=param, timeout=3)
 
-# # 获取地图图片
+# 获取地图图片
 # param = {"map_name":"factoryall"}
 # cv2.namedWindow("SERVER",0);
 # cv2.resizeWindow("SERVER", 1080, 960);
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['map_png']}", params=param, timeout=20)
 # image_num = numpy.fromstring(response.content, numpy.uint8) #将字符串转为numpy矩阵
+# print(response.content)
 # #opencv可以直接解码png二进制流
 # decimg = cv2.imdecode(image_num, cv2.IMREAD_COLOR) #将矩阵解码成图像
 # cv2.imshow('SERVER',decimg)
 # # #waitkey内的参数控制每张图像显示多少毫秒，返回值是这段时间内键盘的值
 # cv2.waitKey()
 # cv2.imwrite("factoryall.png", decimg);
-# # 
+# 
 
 
 # headers = {
@@ -147,11 +149,18 @@ response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{rob
 # print(type(li[0]))
 # print(bytes(li[0:2]))
 
+# 摄像头云台控制
 # param = {"dwPTZCommand":23,"dwSpeed":1,"dwStop":0}
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['ptz_control']}", params =param, timeout=5)
 # time.sleep(2)
 # param = {"dwPTZCommand":23,"dwSpeed":1,"dwStop":1}
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['ptz_control']}", params =param, timeout=5)
 
+# 更换服务器地址
+# headers = {
+# "Content-Type": "application/json",
+# "Connection": "close",
+# }
+# response = requests.get(f"http://127.0.0.1:62223/gs-robot/cmd/change_server_ip?ip=127.0.0.1&port=62222",headers=headers,timeout=5)
 print(response.status_code)
 print(response.content)

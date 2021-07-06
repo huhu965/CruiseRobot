@@ -6,6 +6,7 @@ import requests
 import socket
 import json
 import datetime
+import struct
 import pyaudio
 from threading import Thread
 from multiprocessing import Process
@@ -304,9 +305,9 @@ class robot_position_update_Thread(Thread):
 
 class SpeakProcess(Process):
     # 初始化
-    def __init__(self,message_queue_input):
+    def __init__(self,server_ip,message_queue_input):
         super().__init__()
-        self.server_ip = ('127.0.0.1', 62222)
+        self.server_ip = server_ip
         self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.data_change_lock = threading.Lock()  #线程锁
         self.data_store_buff = []
@@ -322,63 +323,37 @@ class SpeakProcess(Process):
             except Exception as e:
                 print(e,self.server_ip)
                 time.sleep(10)
-
-    def insert_data_tobuff(self, data): #输入bytes吧
-        try:
-            length_data = len(data)
-            if (len(self.data_store_buff) + length_data) > self.max_store_size:
-                try:
-                    self.data_change_lock.acquire()
-                    del self.data_store_buff[0 : length_data]
-                finally:
-                    self.data_change_lock.release()
-                new_data_list = list(data)
-                self.data_store_buff.extend(new_data_list)
-            else:
-                new_data_list = list(data)
-                self.data_store_buff.extend(new_data_list)
-        except Exception as e:
-            print("insert data error: ",e)
-
-    def get_data(self,data_size):
-        try:
-            if(len(self.data_store_buff)>data_size):
-                data = bytes(self.data_store_buff[0:data_size])
-                try:
-                    self.data_change_lock.acquire()
-                    del self.data_store_buff[0 : data_size]
-                except Exception:
-                    print("获取数据后删除错误")
-                finally:
-                    self.data_change_lock.release()
-                return data
-            else:
-                return b''
-        except Exception:
-            print("获取数据错误")
-            return b''
         
-
     def recv_voice_data(self):
-        self.connect_server()
-        content = b"robot_speak \r\n"
-        self.receive_socket.sendall(content)#注册身份
+        try:
+            _size = struct.calcsize('II')
+            fhead = self.receive_socket.recv(_size,0x100)  #0x100在c++中代表接收waitall
+            #处理接收长度信息
+            if len(fhead) == 0: #基本上是服务器端关闭了，拖着等重连启动
+                return b''
+            data_type, length = struct.unpack('II', fhead)
+            if length == 0:
+                return b''
+            else:
+                data = self.receive_socket.recv(length,0x100)  #接收服务器发的请求
+                return data
+        except Exception as e:
+            print("对讲错误",e)
+            return b''
+
+    def recv_data(self):
         while True:
-            try:
-                data = self.recv_socket.recv(self.frameSize,0x100)  #接收服务器发的请求
-                if len(data) ==0:
-                    break
-                self.insert_data_tobuff(data)
-            except Exception as e:
-                print("讲话进程接收",e)
+            buf = self.recv_voice_data()
+            # 文件结束
+            if not buf:
+                continue
+            self.stream.write(buf)
 
     # 收到websocket连接建立的处理
     def run(self):
-        begin_time = datetime.now()
-
-        self.receive_audio_thread = threading.Thread(target=self.recv_voice_data) #接收音频信号
-        self.receive_audio_thread.daemon = True #守护线程
-        self.receive_audio_thread.start()
+        self.connect_server()
+        content = b"robot_speak \r\n"
+        self.receive_socket.sendall(content)#注册身份
 
         CHUNK = 5120#队列长度
         FORMAT = pyaudio.paInt16 #保存格式
@@ -386,11 +361,15 @@ class SpeakProcess(Process):
         RATE = 8000 #采样率，一般8000的采样率能识别出人说的话
         record_p = pyaudio.PyAudio() #实例化
         #打开获取流
-        stream = record_p.open(format=FORMAT,
+        self.stream = record_p.open(format=FORMAT,
                 channels=CHANNELS,
                 rate=RATE,
                 output=True,
                 frames_per_buffer=CHUNK)
+        
+        self.receive_data_thread = threading.Thread(target=self.recv_data) #接收音频信号
+        self.receive_data_thread.daemon = True #守护线程
+        self.receive_data_thread.start()
 
         while True:
             try:
@@ -399,16 +378,8 @@ class SpeakProcess(Process):
                     break
             except:
                 pass
-            buf = self.get_data(self.frameSize)
-            # 文件结束
-            if not buf:
-                print("没东西")
-                time.sleep(1)
-                continue
-            stream.write(buf)
-
+        self.receive_socket.shutdown(2)
         self.receive_socket.close()
-        stream.stop_stream()
-        stream.close()
+        self.stream.stop_stream()
+        self.stream.close()
         record_p.terminate()
-        # print("关闭讲话")   

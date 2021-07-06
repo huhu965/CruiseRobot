@@ -1,6 +1,16 @@
+/*
+ * @Description:{} 
+ * @Author: Hu Ziwei  
+ * @Date: 2021-07-06 23:39:48  
+ * @Last Modified by: Hu Ziwei
+ * @Last Modified time: 2021-07-06 23:43:17
+*/
+
+
 #include "VideoHandle.h"
 using namespace std;
 
+int test;
 extern CameraParam normal_camera;
 extern CameraParam infrared_camera;
 pthread_t cmd_recv_thread;
@@ -93,12 +103,12 @@ void *video_handle_func(void* args){
     ablityparam.lpCondBuffer = NULL;
     ablityparam.lpStatusBuffer =(char*)"ThermalCap";
 
-    _connect_server(_camera_param_ptr); //链接服务器
+    // _connect_server(_camera_param_ptr); //链接服务器
     _login_camera(_camera_param_ptr); //登录摄像头
     if(!_camera_param_ptr->have_voice){
         _read_temperature(_camera_param_ptr);
     }
-    // _video_begin(_camera_param_ptr);
+    _video_begin(_camera_param_ptr);
     while(true){
         memset(&_recv_head, 0, sizeof(HeadData)); //清空
         recv(_camera_param_ptr->socket_tcp, (char*)&_recv_head, sizeof(HeadData), MSG_WAITALL);
@@ -157,6 +167,7 @@ void param_init(){
     addr.sin_family = AF_INET;
     addr.sin_port = htons(62222);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
     addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    // addr.sin_addr.s_addr = inet_addr("10.7.5.127");
 
     normal_camera.server_addr = addr;
     infrared_camera.server_addr = addr;
@@ -218,7 +229,7 @@ void param_init(){
 
     awake_param.grammar_list = NULL;
     awake_param.login_param = "appid = 35dcd3b2,work_dir = .";
-    awake_param.session_begin_params = "ivw_threshold=0:500,sst=wakeup,ivw_res_path =fo|res/ivw/wakeupresource.jet";
+    awake_param.session_begin_params = "ivw_threshold=0:1500,sst=wakeup,ivw_res_path =fo|res/ivw/wakeupresource.jet";
     awake_param.session_id = NULL;
     awake_param.audio_stat = MSP_AUDIO_SAMPLE_FIRST;
     awake_param.is_awake = false;
@@ -244,10 +255,10 @@ void Init(){
     if (rc1){
         cout << "Error:无法创建线程:" << rc1 << endl;
     }
-    int rc2 = pthread_create(&infrared_video_handle_thread, NULL, video_handle_func,&infrared_camera);//创建接收命令线程
-    if (rc2){
-        cout << "Error:无法创建线程:" << rc2 << endl;
-    }
+    // int rc2 = pthread_create(&infrared_video_handle_thread, NULL, video_handle_func,&infrared_camera);//创建接收命令线程
+    // if (rc2){
+    //     cout << "Error:无法创建线程:" << rc2 << endl;
+    // }
     int rc3 = pthread_create(&voice_awake_thread, NULL, voice_awake,&awake_param);//创建接收命令线程
     if (rc3){
         cout << "Error:无法创建线程:" << rc3 << endl;

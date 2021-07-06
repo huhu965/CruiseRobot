@@ -1,6 +1,8 @@
 from play_voice import PlayVoice, play_system_audio
 from threading import Thread
 import time
+#温度报警函数
+#device_data_upload_thread 是数据采集线程
 class TemperatureWarnThread(Thread):
     def __init__(self, device_data_upload_thread):
         super().__init__()
@@ -13,6 +15,8 @@ class TemperatureWarnThread(Thread):
                 play_system_audio("环境高温警告")
             time.sleep(1)
 
+#气体浓度报警函数
+#device_data_upload_thread 是数据采集线程
 class GasWarnThread(Thread):
     def __init__(self, device_data_upload_thread):
         super().__init__()

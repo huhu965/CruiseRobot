@@ -56,13 +56,15 @@ API = {
     "cancle_task_queue": "/gs-robot/cmd/cancle_task_queue", #恢复队列任务
     "on_map_add_position": "/gs-robot/cmd/position/add_position", #post 
     "ptz_control" : "/gs-robot/cmd/ptz_control",#dwPTZCommand=?&dwSpeed=?&dwStop=?
-    "open_video" : "/gs-robot/cmd/open_video", #向服务器查询视频是否打开
+    "open_video" : "/gs-robot/cmd/open_video", #打开视频
+    "open_video_nointer" : "/gs-robot/cmd/open_video_nointer", #打开视频
     "close_video" : "/gs-robot/cmd/close_video", #关闭视频传输
     "power_off" : "/gs-robot/cmd/power_off", #交互模块关机
     "open_light": "/gs-robot/cmd/open_light", #打开报警灯
     "open_trumpet": "/gs-robot/cmd/open_trumpet",#打开喇叭
     "close_light": "/gs-robot/cmd/close_light", #关闭报警灯
     "close_trumpet": "/gs-robot/cmd/close_trumpet",#关闭喇叭
+    "change_server_ip": "/gs-robot/cmd/change_server_ip"#ip=?&port=? 更改服务器链接的ip,
 }
 
 PTZ_Command = {

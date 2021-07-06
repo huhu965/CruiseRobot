@@ -172,7 +172,7 @@ class Callback(object):
     def video_open_callback(self,data = ''): #启动视频解码
         try:
             if self.video_process == None:
-                self.video_process = subprocess.Popen("./src/video_decode")#启动解码程序
+                self.video_process = subprocess.Popen("./src/video_decode_nointer")#启动解码程序
         except Exception as e:
             print(e)
     

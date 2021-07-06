@@ -43,21 +43,26 @@ std::map<std::string, std::string> split_url_param(std::string url_param)
 //图片格式转换
 string transform_TYV12_to_CV8UC3(char * pBuf, int nSize, FRAME_INFO * pFrameInfo)
 {
-    Mat pImg(pFrameInfo->nHeight, pFrameInfo->nWidth, CV_8UC3);
-    Mat src(pFrameInfo->nHeight + pFrameInfo->nHeight / 2, pFrameInfo->nWidth, CV_8UC1, pBuf);
+    try{
+        Mat pImg(pFrameInfo->nHeight, pFrameInfo->nWidth, CV_8UC3);
+        Mat src(pFrameInfo->nHeight + pFrameInfo->nHeight / 2, pFrameInfo->nWidth, CV_8UC1, pBuf);
 
-    cvtColor(src, pImg, CV_YUV2BGR_YV12);//转为bgr格式
+        cvtColor(src, pImg, CV_YUV2BGR_YV12);//转为bgr格式
 
-    vector<uchar> im_buf;
-    vector<int> param;
-    param.push_back(IMWRITE_JPEG_QUALITY);
-    param.push_back(80);//解码后图片的压缩质量，数越大质量越高，数据量越大
+        vector<uchar> im_buf;
+        vector<int> param;
+        param.push_back(IMWRITE_JPEG_QUALITY);
+        param.push_back(80);//解码后图片的压缩质量，数越大质量越高，数据量越大
 
-    cv::imencode(".jpg", pImg, im_buf,param);
-    std::string str_img(im_buf.begin(), im_buf.end());
-    // imshow("IPCamera", pImg);
-    // waitKey(1);
-    return str_img;
+        cv::imencode(".jpg", pImg, im_buf,param);
+        std::string str_img(im_buf.begin(), im_buf.end());
+        imshow("IPCamera", pImg);
+        waitKey(1);
+        return str_img;
+    }catch(...){
+        cout<<"catch (...)"<<endl;
+        return "";
+    }
 }
 //语音唤醒回调函数
 int cb_ivw_msg_proc( const char *sessionID, int msg, int param1, int param2, const void *info, void *userData )
@@ -96,13 +101,36 @@ void CALLBACK g_ExceptionCallBack(DWORD dwType, LONG lUserID, LONG lHandle, void
 void CALLBACK fRealDataCallBack(LONG lRealHandle, DWORD dwDataType, BYTE *pBuffer, DWORD dwBufSize, void *pUser){
     CameraParamPtr camera_ptr = (CameraParamPtr)pUser;
     HeadData head_data;
-    char video_data_Buffer[10000]; //发送缓冲区
-    memset(video_data_Buffer, 0, sizeof(video_data_Buffer)); //清空
     head_data.dwDataType = dwDataType;
     head_data.dwBufSize = dwBufSize;
-    memcpy(video_data_Buffer, pBuffer, dwBufSize);
-    send(camera_ptr->socket_tcp, (char*)&head_data, sizeof(HeadData), MSG_WAITALL);
-    send(camera_ptr->socket_tcp, video_data_Buffer, dwBufSize, MSG_WAITALL);//通过tcp直接发送码流
+
+    if(dwDataType == NET_DVR_SYSHEAD)//系统头通过tcp发送
+    {
+        send(camera_ptr->socket_tcp, (char*)&head_data, sizeof(HeadData), MSG_WAITALL);
+        send(camera_ptr->socket_tcp, (char*)pBuffer, dwBufSize, MSG_WAITALL);//通过tcp直接发送码流
+        memset(camera_ptr->data_buff, 0, sizeof(camera_ptr->data_buff)); //清空
+
+        memcpy(camera_ptr->data_buff, (char*)&camera_ptr->data_stamp, 4);
+        camera_ptr->data_buff_size = 4;
+        camera_ptr->data_stamp ++; //时间戳，用于标记顺序
+    }
+    else{
+        if(dwBufSize>2000) //如果接收到新的一个I帧，就把之前存的发出去
+        {
+            sendto(camera_ptr->socket_udp, camera_ptr->data_buff, camera_ptr->data_buff_size,
+            0 , (struct sockaddr *)&camera_ptr->udp_server_addr, sizeof(struct sockaddr));
+            memset(camera_ptr->data_buff, 0, sizeof(camera_ptr->data_buff)); //清空
+
+            memcpy(camera_ptr->data_buff, (char*)&camera_ptr->data_stamp, 4);
+            memcpy(camera_ptr->data_buff+4, pBuffer, dwBufSize);
+            camera_ptr->data_buff_size = dwBufSize + 4;
+            camera_ptr->data_stamp ++; //时间戳，用于标记顺序
+        }else{
+            memcpy(camera_ptr->data_buff + camera_ptr->data_buff_size, pBuffer, dwBufSize);
+            camera_ptr->data_buff_size += dwBufSize;
+        }
+    }
+
     if(camera_ptr->have_voice == true){
         switch (dwDataType)
         {
@@ -116,7 +144,7 @@ void CALLBACK fRealDataCallBack(LONG lRealHandle, DWORD dwDataType, BYTE *pBuffe
                 if (!PlayM4_OpenStream(camera_ptr->nPort, pBuffer, dwBufSize, 10 * 1024 * 1024)){ //打开流接口
                     cout<<"打开流接口失败"<<endl;
                 }
-                if (!PlayM4_SetDecCallBack(camera_ptr->nPort, voice_DecCBFun)){//设置解码回调函数，获取解码后的数据
+                if (!PlayM4_SetDecCallBack(camera_ptr->nPort, normal_DecCBFun)){//设置解码回调函数，获取解码后的数据
                     cout<<"设置解码回调函数失败"<<endl;
                 }
                 if (!PlayM4_Play(camera_ptr->nPort, NULL)){ //播放开始
@@ -129,7 +157,6 @@ void CALLBACK fRealDataCallBack(LONG lRealHandle, DWORD dwDataType, BYTE *pBuffe
                 } 
                 break;
             case NET_DVR_STREAMDATA:
-                //码流数据
                 if (dwBufSize > 0 && camera_ptr->nPort != -1)
                 {
                     if (!PlayM4_InputData(camera_ptr->nPort, pBuffer, dwBufSize))
@@ -220,8 +247,10 @@ void CALLBACK normal_DecCBFun(int nPort, char * pBuf, int nSize, FRAME_INFO * pF
     if (lFrameType == T_YV12)
     {
         string str_img = transform_TYV12_to_CV8UC3(pBuf,nSize,pFrameInfo);
+        if(str_img.length() != 0){
         int num = sendto(normal_camera.socket_udp, str_img.c_str(), str_img.length(),
                          0 , (struct sockaddr *)&normal_camera.udp_server_addr, sizeof(struct sockaddr));
+        }
     }
     else if(lFrameType == T_AUDIO16)
     {

@@ -6,9 +6,30 @@ import subprocess
 import signal
 import requests
 
+def change_server_ip(self,param = ""):
+    try:
+        back_data = respond_message_creat()
+        self.respond_send(back_data)
+
+        self.close_link()
+        ip = param.split('&')[0].split('=')[1]
+        port = int(param.split('&')[1].split('=')[1])
+        self.server_ip = (ip,port)
+        print(self.server_ip)
+        self.connect_server()
+        self.register_identity()
+        back_data = b''
+    except Exception as e:
+        print("更改服务器地址错误",e)
+        back_data = b''
+    finally:
+        return back_data
 def position_navigate(self, param = ""):
-    response = requests.get(f"http://{self.robot_ip}:{self.robot_port}/gs-robot/cmd/position/navigate",params=param, timeout=1)
-    back_data = respond_message_creat(content=response.content)
+    try:
+        response = requests.get(f"http://{self.robot_ip}:{self.robot_port}/gs-robot/cmd/position/navigate",params=param, timeout=1)
+        back_data = respond_message_creat(content=response.content)
+    except Exception as e:
+        back_data = respond_message_creat(msg = "timeout")
     return back_data
     
 def move(self, post_data):
@@ -47,9 +68,20 @@ def close_video(self, param = "", robot_usr = False):
         back_data = respond_message_creat()
         return back_data
 
+#打开视频传输
+def open_video_nointer(self, param = "", robot_usr = False):
+    # voice_source_path = os.path.split(os.path.realpath(__file__))[0]
+    try:
+        if self.video_process == None:
+            self.video_process = subprocess.Popen("./video_trans_nointer")#启动解码程序
+    except Exception as e:
+        print(e)
+    if not robot_usr:
+        back_data = respond_message_creat()
+        return back_data
+
 #处理云台控制指令
 def ptz_control(self,  param = ""):
-    print(param)
     self.cmd_socket.sendto(("ptz_control?" + param).encode('utf-8'), self.cmd_ip) #向摄像头进程发送指令
     back_data = self.respond_message_creat()
     return back_data
@@ -101,26 +133,32 @@ def cancle_task_queue(self, param = ""):
     finally:
         return back_data
 def power_off(self, param = ""):
+    try:
+        response = requests.get(f"http://{self.robot_ip}:{self.robot_port}/gs-robot/cmd/power_off",params=param, timeout=1)
+    except Exception:
+        pass
     back_data = respond_message_creat()
     os.system('poweroff')
     return back_data
 
 
-def open_speak(self):
+def open_speak(self,param = ""):
     try:
         back_data = self.respond_message_creat()
-        self.speak_process =SpeakProcess(self.speak_message_queue)
+        self.speak_process =SpeakProcess(self.server_ip,self.speak_message_queue)
         self.speak_process.start()
     except:
         back_data = self.respond_message_creat(msg = "讲话接收线程打开错误")
     finally:
         return back_data
 
-def close_speak(self):
+def close_speak(self,param = ""):
+    back_data = self.respond_message_creat()
     if self.speak_process != None:
         self.speak_message_queue.put("process_end")
-        time.sleep(2)
+        time.sleep(1)
         self.speak_process = None
+    return back_data
 
 # def handle_close_light(self):
 #     try:
