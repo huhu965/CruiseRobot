@@ -87,7 +87,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow, Callback):
 
         self.task_tabview_display() #更新任务信息
 
-        #视频接收线程
+        #视频接收线程sp
         self.video_receive_thread = message_receive_Thread('127.0.0.1', 8000) # 实例化自己建立的任务线程类
         self.video_receive_thread.signal.connect(self.video_receive_callback) #设置任务线程发射信号触发的函数
         self.video_receive_thread.start()

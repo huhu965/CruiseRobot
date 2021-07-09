@@ -103,12 +103,12 @@ void *video_handle_func(void* args){
     ablityparam.lpCondBuffer = NULL;
     ablityparam.lpStatusBuffer =(char*)"ThermalCap";
 
-    // _connect_server(_camera_param_ptr); //链接服务器
+    _connect_server(_camera_param_ptr); //链接服务器
     _login_camera(_camera_param_ptr); //登录摄像头
     if(!_camera_param_ptr->have_voice){
         _read_temperature(_camera_param_ptr);
     }
-    _video_begin(_camera_param_ptr);
+    // _video_begin(_camera_param_ptr);
     while(true){
         memset(&_recv_head, 0, sizeof(HeadData)); //清空
         recv(_camera_param_ptr->socket_tcp, (char*)&_recv_head, sizeof(HeadData), MSG_WAITALL);
@@ -171,6 +171,18 @@ void param_init(){
 
     normal_camera.server_addr = addr;
     infrared_camera.server_addr = addr;
+    //设置视频udp地址
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(62220);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
+    addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    normal_camera.video_udp_addr = addr;
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(62221);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
+    addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    infrared_camera.video_udp_addr = addr;
     //设置指令接收地址
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
@@ -215,7 +227,12 @@ void param_init(){
     normal_camera.command_receive_socket = socket(AF_INET, SOCK_DGRAM, 0);
     normal_camera.socket_tcp = socket(AF_INET, SOCK_STREAM, 0);
     normal_camera.voice_upload_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    normal_camera.video_udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
     normal_camera.have_voice = true;
+    normal_camera.data_buff_size = 0;
+    normal_camera.data_stamp =0; //时间戳，用于标记顺序
+    normal_camera.data_store_max_number = 4;
+    normal_camera.data_store_number = 0;
 
     infrared_camera.addrcream = (char*)"10.7.5.122";
     infrared_camera.name = (char*)"admin";
@@ -225,7 +242,12 @@ void param_init(){
     infrared_camera.heart_respond = false;
     infrared_camera.socket_tcp = socket(AF_INET, SOCK_STREAM, 0);
     infrared_camera.socket_udp = socket(AF_INET, SOCK_DGRAM, 0);
+    infrared_camera.video_udp_socket = socket(AF_INET, SOCK_DGRAM, 0);
     infrared_camera.have_voice = false;
+    infrared_camera.data_buff_size = 0;
+    infrared_camera.data_stamp =0; //时间戳，用于标记顺序
+    infrared_camera.data_store_max_number = 2;
+    infrared_camera.data_store_number = 0;
 
     awake_param.grammar_list = NULL;
     awake_param.login_param = "appid = 35dcd3b2,work_dir = .";
@@ -255,10 +277,10 @@ void Init(){
     if (rc1){
         cout << "Error:无法创建线程:" << rc1 << endl;
     }
-    // int rc2 = pthread_create(&infrared_video_handle_thread, NULL, video_handle_func,&infrared_camera);//创建接收命令线程
-    // if (rc2){
-    //     cout << "Error:无法创建线程:" << rc2 << endl;
-    // }
+    int rc2 = pthread_create(&infrared_video_handle_thread, NULL, video_handle_func,&infrared_camera);//创建接收命令线程
+    if (rc2){
+        cout << "Error:无法创建线程:" << rc2 << endl;
+    }
     int rc3 = pthread_create(&voice_awake_thread, NULL, voice_awake,&awake_param);//创建接收命令线程
     if (rc3){
         cout << "Error:无法创建线程:" << rc3 << endl;

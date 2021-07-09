@@ -115,19 +115,23 @@ void CALLBACK fRealDataCallBack(LONG lRealHandle, DWORD dwDataType, BYTE *pBuffe
         camera_ptr->data_stamp ++; //时间戳，用于标记顺序
     }
     else{
-        if(dwBufSize>2000) //如果接收到新的一个I帧，就把之前存的发出去
+        // cout<<dwBufSize<<endl;
+        if(camera_ptr->data_store_number > camera_ptr->data_store_max_number) //如果接收到新的一个I帧，就把之前存的发出去
         {
-            sendto(camera_ptr->socket_udp, camera_ptr->data_buff, camera_ptr->data_buff_size,
-            0 , (struct sockaddr *)&camera_ptr->udp_server_addr, sizeof(struct sockaddr));
+            // cout<<"发送视频信息："<<camera_ptr->data_stamp<<"  "<<camera_ptr->data_buff_size<<"  "<<camera_ptr->data_store_number<<endl;
+            sendto(camera_ptr->video_udp_socket, camera_ptr->data_buff, camera_ptr->data_buff_size,
+            0 , (struct sockaddr *)&camera_ptr->video_udp_addr, sizeof(struct sockaddr));
             memset(camera_ptr->data_buff, 0, sizeof(camera_ptr->data_buff)); //清空
 
             memcpy(camera_ptr->data_buff, (char*)&camera_ptr->data_stamp, 4);
             memcpy(camera_ptr->data_buff+4, pBuffer, dwBufSize);
             camera_ptr->data_buff_size = dwBufSize + 4;
             camera_ptr->data_stamp ++; //时间戳，用于标记顺序
+            camera_ptr->data_store_number = 1;
         }else{
             memcpy(camera_ptr->data_buff + camera_ptr->data_buff_size, pBuffer, dwBufSize);
             camera_ptr->data_buff_size += dwBufSize;
+            camera_ptr->data_store_number++;
         }
     }
 
@@ -144,7 +148,7 @@ void CALLBACK fRealDataCallBack(LONG lRealHandle, DWORD dwDataType, BYTE *pBuffe
                 if (!PlayM4_OpenStream(camera_ptr->nPort, pBuffer, dwBufSize, 10 * 1024 * 1024)){ //打开流接口
                     cout<<"打开流接口失败"<<endl;
                 }
-                if (!PlayM4_SetDecCallBack(camera_ptr->nPort, normal_DecCBFun)){//设置解码回调函数，获取解码后的数据
+                if (!PlayM4_SetDecCallBack(camera_ptr->nPort, voice_DecCBFun)){//设置解码回调函数，获取解码后的数据
                     cout<<"设置解码回调函数失败"<<endl;
                 }
                 if (!PlayM4_Play(camera_ptr->nPort, NULL)){ //播放开始
@@ -368,7 +372,7 @@ void _read_temperature(void* args)
     _camera_param_ptr->lTemperatureHandle = NET_DVR_StartRemoteConfig(_camera_param_ptr->lUserID,
                                     NET_DVR_GET_REALTIME_THERMOMETRY,
                                     &thermometry,sizeof(thermometry),RemoteConfigCallback,NULL);
-    cout<<"启动:"<<_camera_param_ptr->lTemperatureHandle<<endl;
+    // cout<<"启动:"<<_camera_param_ptr->lTemperatureHandle<<endl;
 }
 void _video_begin(void* args){
     CameraParamPtr _camera_param_ptr = (CameraParamPtr)args;

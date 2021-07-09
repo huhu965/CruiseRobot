@@ -62,8 +62,8 @@ typedef struct
     bool heart_respond = false;
     bool have_voice = false;
 
-    int socket_tcp;//视频传输socket
-    int socket_udp;//视频传输socket
+    int socket_tcp;
+    int socket_udp;
     struct sockaddr_in server_addr; //服务器地址
     struct sockaddr_in udp_server_addr; //服务器地址
     /*udp*/
@@ -74,9 +74,13 @@ typedef struct
     struct sockaddr_in voice_addr; //服务器地址
     struct sockaddr_in voice_cmd_addr;//唤醒后给主线程发送唤醒指令
 
-    char data_buff[10000];  //视频信息缓冲
+    char data_buff[20000];  //视频信息缓冲
     int data_buff_size;
     int data_stamp;
+    int video_udp_socket;
+    struct sockaddr_in video_udp_addr;
+    int data_store_max_number;
+    int data_store_number;
 
 }CameraParam,* CameraParamPtr;
 

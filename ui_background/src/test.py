@@ -76,18 +76,18 @@ response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{rob
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['positions']}", params=param, timeout=3)
 
 # 获取地图图片
-# param = {"map_name":"factoryall"}
+# param = {"map_name":"test"}
 # cv2.namedWindow("SERVER",0);
 # cv2.resizeWindow("SERVER", 1080, 960);
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['map_png']}", params=param, timeout=20)
 # image_num = numpy.fromstring(response.content, numpy.uint8) #将字符串转为numpy矩阵
-# print(response.content)
+# # print(response.content)
 # #opencv可以直接解码png二进制流
 # decimg = cv2.imdecode(image_num, cv2.IMREAD_COLOR) #将矩阵解码成图像
 # cv2.imshow('SERVER',decimg)
 # # #waitkey内的参数控制每张图像显示多少毫秒，返回值是这段时间内键盘的值
 # cv2.waitKey()
-# cv2.imwrite("factoryall.png", decimg);
+# cv2.imwrite("test.png", decimg);
 # 
 
 

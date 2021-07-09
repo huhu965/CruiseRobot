@@ -13,6 +13,7 @@ from web_socket import robot_device_status_update_Thread, robot_navigate_status_
 from gs_robot.robot_thread_class import *
 from gs_robot.general_function import Param_Init
 from gs_robot.cmd import open_video, close_video
+import gs_robot.data
 from play_voice import PlayVoice, play_system_audio
 from handle_awake import RobotAwakeProcess
 from warn_thread_class import TemperatureWarnThread, GasWarnThread

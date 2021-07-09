@@ -49,7 +49,7 @@ class Callback(object):
 
     def map_png_callback_location(self):
         try:
-            decimg = cv2.imread('/home/huziwei/CruiseRobot/ui_background/factoryall.png',cv2.IMREAD_COLOR)
+            decimg = cv2.imread('/home/huziwei/CruiseRobot/ui_background/test.png',cv2.IMREAD_COLOR)
             
             shrink = cv2.cvtColor(decimg, cv2.COLOR_BGR2RGB) #将bgr(opencv)转为rgb(pyqt5)
             QtImg = QImage(shrink.data,
@@ -172,7 +172,7 @@ class Callback(object):
     def video_open_callback(self,data = ''): #启动视频解码
         try:
             if self.video_process == None:
-                self.video_process = subprocess.Popen("./src/video_decode_nointer")#启动解码程序
+                self.video_process = subprocess.Popen("./src/video_decode")#启动解码程序
         except Exception as e:
             print(e)
     
