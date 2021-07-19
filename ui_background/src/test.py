@@ -37,15 +37,24 @@ import os
 # cv2.resizeWindow("enhanced", 1440, 960);
 # cv2.imshow("enhanced",decimg)
 # cv2.waitKey(0)
-
+##############################
 # param = {"map_name":"factoryall","position_name":"1xuncha0"}
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['navigate']}", params = param, timeout=5)
 
-# param = {"map_name":"factory","init_point_name":"End"}
+# # # 添加标记点   7xuncha1  7beng  7ruanguan
 
-# # # 添加标记点
-# param = {"position_name":"7test1","type":2}
+# 1xuncha
+# 1beng
+# 1ruanguan
+
+
+# param = {"position_name":"1ruanguan1","type":2}
+
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['add_position']}", params = param, timeout=5)
+
+# print(response.status_code)
+# print(response.content)
+###################################
 
 # # 开始建图
 # param = {"map_name":"factoryall","type":"1"}
@@ -64,15 +73,16 @@ import os
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['initialize']}", params =param, timeout=5)
 
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_light']}", timeout=5)
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
+response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_video']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}/gs-robot/cmd/open_video_nointer", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['close_video']}", timeout=5)
-response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_voice_exam']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['gps_raw']}", timeout=5)
 # # 查看地图的点列表
 
-# param = {"map_name":"fsactoryall","type":2}
+# param = {"map_name":"factoryall","type":2}
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['positions']}", params=param, timeout=3)
 
 # 获取地图图片
@@ -154,7 +164,8 @@ response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{rob
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['ptz_control']}", params =param, timeout=5)
 # time.sleep(2)
 # param = {"dwPTZCommand":23,"dwSpeed":1,"dwStop":1}
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['ptz_control']}", params =param, timeout=5)
+
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['device_status']}", timeout=5)
 
 # 更换服务器地址
 # headers = {

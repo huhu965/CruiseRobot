@@ -299,7 +299,7 @@ void CALLBACK RemoteConfigCallback(DWORD dwType, void *lpBuffer, DWORD dwBufLen,
                                     _temperature_ptr->struLinePolygonThermCfg.fMaxTemperature,
                                     _temperature_ptr->struLinePolygonThermCfg.fMinTemperature,
                                     _temperature_ptr->struLinePolygonThermCfg.fAverageTemperature);
-            // cout<<data_buff<<endl;              
+            std::cout<<data_buff<<endl;
             int num = sendto(infrared_camera.socket_udp, data_buff, data_size,
                          0 , (struct sockaddr *)&infrared_camera.udp_server_addr, sizeof(struct sockaddr));
         }

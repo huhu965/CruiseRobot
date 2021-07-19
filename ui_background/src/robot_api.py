@@ -43,7 +43,7 @@ API = {
     "is_move_to_finished" :"/gs-robot/cmd/is_move_to_finished",  # 判读定速定距离移动是否完成
     "stop_move_to" :"/gs-robot/cmd/stop_move_to",   # 停止定速定距离移动
     "clear_mcu_error" :"/gs-robot/cmd/clear_mcu_error",#?error_id=-1",  # 清除驱动器错误，不知道错误id默认传-1
-    "power_off" :"/gs-robot/cmd/power_off",  # 关机，充电状态下才能关机
+    "power_off" :"/gs-robot/cmd/power_off",  # 关机
     "set_speed_level" :"/gs-robot/cmd/set_speed_level",#?level=?",  # 设置导航时移动速度，低中高，0 1 2,
     "stop_task_queue": "/gs-robot/cmd/stop_task_queue", #停止所有队列任务
     "start_task_queue": "/gs-robot/cmd/start_task_queue",#开始队列任务
@@ -58,6 +58,7 @@ API = {
     "open_trumpet": "/gs-robot/cmd/open_trumpet",#打开喇叭
     "close_light": "/gs-robot/cmd/close_light", #关闭报警灯
     "close_trumpet": "/gs-robot/cmd/close_trumpet",#关闭喇叭
+    "open_voice_exam": "/gs-robot/cmd/open_voice_exam",#开始考核
 }
 
 PTZ_Command = {

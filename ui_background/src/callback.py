@@ -49,7 +49,7 @@ class Callback(object):
 
     def map_png_callback_location(self):
         try:
-            decimg = cv2.imread('/home/huziwei/CruiseRobot/ui_background/test.png',cv2.IMREAD_COLOR)
+            decimg = cv2.imread('/home/huziwei/CruiseRobot/ui_background/factoryall.png',cv2.IMREAD_COLOR)
             
             shrink = cv2.cvtColor(decimg, cv2.COLOR_BGR2RGB) #将bgr(opencv)转为rgb(pyqt5)
             QtImg = QImage(shrink.data,

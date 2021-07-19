@@ -5,6 +5,12 @@ import os
 import subprocess
 import signal
 import requests
+from handle_awake import SafeExamProcess
+
+def open_voice_exam(self,param = ""):
+    self.exam_cmd_queue.put("开始考核")
+    back_data = self.respond_message_creat()
+    return back_data
 
 def change_server_ip(self,param = ""):
     try:

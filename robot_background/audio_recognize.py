@@ -144,28 +144,28 @@ class AudioRecognizeWebsocket(Process):
         
 
     def recv_voice_data(self): 
-        # CHUNK = 5120#队列长度
-        # FORMAT = pyaudio.paInt16 #保存格式
-        # CHANNELS = 1  #几个通道
-        # RATE = 8000 #采样率，一般8000的采样率能识别出人说的话
-        # record_p = pyaudio.PyAudio() #实例化
-        # #打开获取流
-        # stream = record_p.open(format=FORMAT,
-        #         channels=CHANNELS,
-        #         rate=RATE,
-        #         input=True,
-        #         frames_per_buffer=CHUNK)
+        CHUNK = 5120#队列长度
+        FORMAT = pyaudio.paInt16 #保存格式
+        CHANNELS = 1  #几个通道
+        RATE = 8000 #采样率，一般8000的采样率能识别出人说的话
+        record_p = pyaudio.PyAudio() #实例化
+        #打开获取流
+        stream = record_p.open(format=FORMAT,
+                channels=CHANNELS,
+                rate=RATE,
+                input=True,
+                frames_per_buffer=CHUNK)
 
         while True:
-            data, addr = self.receive_socket.recvfrom(5000)
+            # data, addr = self.receive_socket.recvfrom(5000)
             # print(len(data))
             # self.insert_data_tobuff(data)
-            # data = stream.read(320)
+            data = stream.read(320)
             self.insert_data_tobuff(data)
         
-        # stream.stop_stream()
-        # stream.close()
-        # record_p.terminate()
+        stream.stop_stream()
+        stream.close()
+        record_p.terminate()
 
 
     # 收到websocket连接建立的处理
@@ -202,7 +202,7 @@ class AudioRecognizeWebsocket(Process):
             buf = self.get_data(frameSize)
             # 文件结束
             if not buf and (status != STATUS_LAST_FRAME):
-                # print("没东西")
+                print("没东西")
                 time.sleep(1)
                 continue
             # 第一帧处理
@@ -393,22 +393,22 @@ class speech_recognition_Process(Process):
         print("send end tag success")
         self.ws.close()
 
-# if __name__ == "__main__":
-#     # 测试时候在此处正确填写相关信息即可运行
-#     time1 = datetime.now()
-#     websocket.enableTrace(False)
-#     message_queue = Queue()
-#     audio_queue = Queue()
-#     testprocess = AudioRecognizeWebsocket(message_queue,audio_queue)
-#     testprocess.start()
-#     while True:
-#         if not testprocess.is_alive():
-#             break
-#         try:
-#             w = audio_queue.get(False)
-#             print("外面：",w)
-#         except:
-#             pass
-#         time.sleep(0.1)
-#     time2 = datetime.now()
-#     print(time2-time1)
+if __name__ == "__main__":
+    # 测试时候在此处正确填写相关信息即可运行
+    time1 = datetime.now()
+    websocket.enableTrace(False)
+    message_queue = Queue()
+    audio_queue = Queue()
+    testprocess = AudioRecognizeWebsocket(message_queue,audio_queue)
+    testprocess.start()
+    while True:
+        if not testprocess.is_alive():
+            break
+        try:
+            w = audio_queue.get(False)
+            print("外面：",w)
+        except:
+            pass
+        time.sleep(0.1)
+    time2 = datetime.now()
+    print(time2-time1)

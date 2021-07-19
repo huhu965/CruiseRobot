@@ -139,68 +139,30 @@ class SafeExamProcess(BaseVoicePlay, Process):
 
 
 class RobotAwakeProcess(Process,BaseVoicePlay):
-    def __init__(self,ip_port):
+    def __init__(self,ip_port,cmd_queue):
         BaseVoicePlay.__init__(self)
         Process.__init__(self)
         self.ip_port = ip_port
         self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #接收音频信号
-        self.audio_recognize_output_queue = Queue()
-        self.audio_recognize_input_queue = Queue()
+        self.cmd_queue = cmd_queue
     
     def cmd_slect(self):
-        begin_date_time = datetime.datetime.now()
-        all_answers = ''
-        while True:
-            try:
-                if (datetime.datetime.now() - begin_date_time).seconds > 30:
-                    self.audio_recognize_input_queue.put("process_end")
-                    # print("恢复休眠状态")
-                    break
-            except Exception as e:
-                print(e)
-            try:
-                unit_answers = self.audio_recognize_output_queue.get(False)
-                #print("ghghg:" + unit_answers)
-                all_answers += unit_answers
-                if "开始考核" in all_answers: #如果包含答案
-                    # print("考核操作")
-                    self.audio_recognize_input_queue.put("process_end")
-                    exam_process = SafeExamProcess()
-                    exam_process.start()
-                    exam_process.join()
-                    break
-                elif "再见" in all_answers:
-                    self.audio_recognize_input_queue.put("process_end")
-                    break
-                elif "timeout" in all_answers:
-                    time.sleep(3)
-                    self.audio_recognize_handle = None
-                    break
-            except Exception as e:
-                # print("ok",e)
-                time.sleep(1)
+        try:
+            all_answers = self.cmd_queue.get() #阻塞等待
 
-    def voice_sleep(self):
-        self.receive_socket.sendto(("voice_sleep").encode('utf-8'), ('127.0.0.1',8002))
+            if "开始考核" in all_answers: #如果包含答案
+                # print("考核操作")
+                exam_process = SafeExamProcess()
+                exam_process.start()
+                exam_process.join()
+        except Exception as e:
+            print("cmd_slect",e)
 
     def run(self):
-        self.receive_socket.bind(self.ip_port)
+        # self.receive_socket.bind(self.ip_port)
         while True:
             try:
-                data, addr = self.receive_socket.recvfrom(5000)
-                if data.startswith(b'GET'):
-                    try:#分割url
-                        request_head = data.decode("utf-8").split("\r\n")[0]
-                        url = request_head.split(' ')[1]
-                        space, name, modules, func = url.split("/")
-                    except Exception as e:
-                        print(e)
-                        continue
-                    if func == 'voice_awake':
-                        self.play_system_audio("响应唤醒")
-                        self.start_audio_recognize(self.audio_recognize_input_queue, self.audio_recognize_output_queue)#开启语音识别线程
-                        self.cmd_slect()
-                        self.voice_sleep()
+                self.cmd_slect()
             except Exception:
                 pass
 
@@ -209,9 +171,10 @@ class RobotAwakeProcess(Process,BaseVoicePlay):
 #     time1 = datetime.datetime.now()
 #     testprocess = SafeExamProcess()
 #     testprocess.start()
-#     while True:
-#         if not testprocess.is_alive():
-#             break
-#         time.sleep(1)
+#     # while True:
+#     #     if not testprocess.is_alive():
+#     #         break
+#     #     time.sleep(1)
+#     testprocess.join()
 #     time2 = datetime.datetime.now()
 #     print(time2-time1)

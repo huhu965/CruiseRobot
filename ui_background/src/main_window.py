@@ -117,7 +117,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow, Callback):
         # #数据接收线程  ---改为长链接
         request_param = creat_request_param("Get", "device_status",loop=True)
         self.robot_right_thread = http_request_Thread(request_param) # 实例化自己建立的任务线程类
-        self.robot_data_receive_thread = http_request_Thread(request_param,wait_timeout = 2 , time_interval = 2) # 实例化自己建立的任务线程类 
+        self.robot_data_receive_thread = http_request_Thread(request_param,wait_timeout = 4 , time_interval = 2) # 实例化自己建立的任务线程类 
         self.robot_data_receive_thread.signal.connect(self.robot_data_receive_thread_callback) #设置任务线程发射信号触发的函数
         self.robot_data_receive_thread.start()
 
@@ -235,7 +235,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow, Callback):
             if self.map_widget.geometry().contains(center_pos): #contains要用父控件的坐标来判断在不在里面，如果不是父控件，坐标是有问题的
                 if self.map_set_navigate or self.map_add_position:
                     map_pos = self.map_widget.mapFromParent(center_pos)
-                    # self.map_label.receive_param(map_pos.x(),map_pos.y())####用来画小车轨迹                                     
+                    # self.map_label.receive_param(map_pos.x(),map_pos.y())####用来画小车轨迹                                  
                     x = map_pos.x()*self.robot_map_datas["map_width"]//self.map_widget.width()
                     y = self.robot_map_datas["map_height"] - map_pos.y()*self.robot_map_datas["map_height"]//self.map_widget.height()
                     print(x,y)

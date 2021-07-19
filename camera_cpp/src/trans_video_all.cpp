@@ -251,7 +251,7 @@ void param_init(){
 
     awake_param.grammar_list = NULL;
     awake_param.login_param = "appid = 35dcd3b2,work_dir = .";
-    awake_param.session_begin_params = "ivw_threshold=0:1500,sst=wakeup,ivw_res_path =fo|res/ivw/wakeupresource.jet";
+    awake_param.session_begin_params = "ivw_threshold=0:500,sst=wakeup,ivw_res_path =fo|res/ivw/wakeupresource.jet";
     awake_param.session_id = NULL;
     awake_param.audio_stat = MSP_AUDIO_SAMPLE_FIRST;
     awake_param.is_awake = false;
