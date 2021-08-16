@@ -44,7 +44,7 @@ class AudioRecognizeWebsocket(Process):
         # print("收到的识别队列", self.audio_recognize_queue_output)
         self.data_change_lock = threading.Lock()  #线程锁
         self.data_store_buff = []
-        self.max_store_size = 64000 
+        self.max_store_size = 50
 
         self.process_end = False
         self.process_error = False
@@ -106,33 +106,27 @@ class AudioRecognizeWebsocket(Process):
                 except Exception as e:
                     print("receive msg,but parse exception:", e)
 
-    def insert_data_tobuff(self, data): #输入bytes吧
+    def insert_data_tobuff(self, data): #输入bytes
         try:
-            length_data = len(data)
-            if (len(self.data_store_buff) + length_data) > self.max_store_size:
+            if (len(self.data_store_buff) + 1) > self.max_store_size:
                 try:
                     self.data_change_lock.acquire()
-                    del self.data_store_buff[0 : length_data]
+                    del self.data_store_buff[0:10]
                 finally:
                     self.data_change_lock.release()
-                new_data_list = list(data)
-                self.data_store_buff.extend(new_data_list)
-            else:
-                new_data_list = list(data)
-                self.data_store_buff.extend(new_data_list)
+
+            self.data_store_buff.append(data)
         except Exception as e:
             print("insert data error: ",e)
 
-    def get_data(self,data_size):
-        # print("存储器大小：",len(self.data_store_buff))
+    def get_data(self):
         try:
-            if(len(self.data_store_buff)>data_size):
-                data = bytes(self.data_store_buff[0:data_size])
+            if self.data_store_buff :
                 try:
                     self.data_change_lock.acquire()
-                    del self.data_store_buff[0 : data_size]
+                    data = self.data_store_buff.pop(0)
                 except Exception:
-                    print("获取数据后删除错误")
+                    print("获取数据错误")
                 finally:
                     self.data_change_lock.release()
                 return data
@@ -142,7 +136,6 @@ class AudioRecognizeWebsocket(Process):
             print("获取数据错误")
             return b''
         
-
     def recv_voice_data(self): 
         CHUNK = 5120#队列长度
         FORMAT = pyaudio.paInt16 #保存格式
@@ -160,17 +153,16 @@ class AudioRecognizeWebsocket(Process):
             # data, addr = self.receive_socket.recvfrom(5000)
             # print(len(data))
             # self.insert_data_tobuff(data)
-            data = stream.read(320)
+            data = stream.read(640)
             self.insert_data_tobuff(data)
         
         stream.stop_stream()
         stream.close()
         record_p.terminate()
 
-
     # 收到websocket连接建立的处理
     def run(self):
-        frameSize = 1280  # 每一帧的音频大小
+        # frameSize = 1280  # 每一帧的音频大小
         intervel = 0.08  # 发送音频间隔(单位:s)
         status = STATUS_FIRST_FRAME  # 音频的状态信息，标识音频是第一帧，还是中间帧、最后一帧
         begin_time = datetime.now()
@@ -199,11 +191,11 @@ class AudioRecognizeWebsocket(Process):
                     status = STATUS_LAST_FRAME
             except:
                 pass
-            buf = self.get_data(frameSize)
+            buf = self.get_data()
             # 文件结束
             if not buf and (status != STATUS_LAST_FRAME):
                 print("没东西")
-                time.sleep(1)
+                time.sleep(0.5)
                 continue
             # 第一帧处理
             # 发送第一帧音频，带business 参数
@@ -240,175 +232,22 @@ class AudioRecognizeWebsocket(Process):
         # print("关闭端口")
 
 
-#语音识别线程，在机器人被语音唤醒后，接收从摄像头传过来的语音信号
-#上传并将识别结果传给主线程，用于进一步的处理
-class speech_recognition_Process(Process):
-    def __init__(self,message_queue_input,audio_recognize_queue_output):
-        super().__init__()
-        logging.basicConfig()
-        pd = "edu"
-        self.end_tag = "{\"end\": true}"
-        base_url = "ws://rtasr.xfyun.cn/v1/ws"
-        app_id = "35dcd3b2"
-        api_key = "4ecffbda7f4ee1a993137808755daf51"
-
-        ts = str(int(time.time()))
-        tt = (app_id + ts).encode('utf-8')
-        md5 = hashlib.md5()
-        md5.update(tt)
-        baseString = md5.hexdigest()
-        baseString = bytes(baseString, encoding='utf-8')
-
-        apiKey = api_key.encode('utf-8')
-        signa = hmac.new(apiKey, baseString, hashlib.sha1).digest()
-        signa = base64.b64encode(signa)
-        signa = str(signa, 'utf-8')
-
-        self.message_queue_input = message_queue_input #命令输入
-        self.audio_recognize_queue_output = audio_recognize_queue_output #识别结果输出
-
-        self.process_is_alive = True #判断进程是否结束了
-        self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.receive_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1) #允许重复绑定端口
-        self.receive_socket.bind(("127.0.0.1", 8021))
-        self.data_change_lock = threading.Lock()  #线程锁
-        self.data_store_buff = []
-        self.max_store_size = 32000 
-
-        self.ws = create_connection(base_url + "?appid=" + app_id + "&ts=" + ts + "&signa=" + quote(signa))
-
-
-    #接收传过来的声音信息，放入缓存中
-    def recv_voice_data(self): 
-        while True:
-            if not self.process_is_alive:
-                break
-            data, addr = self.receive_socket.recvfrom(5000)
-            self.insert_data_tobuff(data)
-
-    def insert_data_tobuff(self, data): #输入bytes吧
-        try:
-            self.data_change_lock.acquire()
-            length_data = len(data)
-            if (len(self.data_store_buff) + length_data) > self.max_store_size:
-                del self.data_store_buff[0 : length_data]
-                new_data_list = list(data)
-                self.data_store_buff.extend(new_data_list)
-            else:
-                new_data_list = list(data)
-                self.data_store_buff.extend(new_data_list)
-        except Exception as e:
-            print("insert data error: ",e)
-        finally:
-            self.data_change_lock.release()
-
-    def get_data(self,data_size):
-        # print("存储器大小：",len(self.data_store_buff))
-        try:
-            if(len(self.data_store_buff)>data_size):
-                data = bytes(self.data_store_buff[0:data_size])
-                try:
-                    self.data_change_lock.acquire()
-                    del self.data_store_buff[0 : data_size]
-                except Exception:
-                    print("获取数据后删除错误")
-                finally:
-                    self.data_change_lock.release()
-                return data
-            else:
-                return b''
-        except Exception:
-            print("获取数据错误")
-            return b''
-
-    def on_message(self):
-        try:
-            while self.ws.connected:
-                result = str(self.ws.recv())
-                if len(result) == 0:
-                    print("receive result end")
-                    break
-                result_dict = json.loads(result)
-                # 解析结果
-                if result_dict["action"] == "started":
-                    print("handshake success, result: " + result)
-
-                if result_dict["action"] == "result":
-                    result_1 = result_dict
-                    # print("rtasr result: " + result_1["data"])
-                    res_dict = json.loads(result_1["data"])
-                    if res_dict["cn"]["st"]["type"] == "0": #0是最终结果，1是中间结果
-                        result_cn = ""
-                        result_list = res_dict["cn"]["st"]["rt"][0]["ws"] #列表，包含结果
-                        for result in result_list:
-                            if result["cw"][0]["wp"] =="s":
-                                print(result["cw"][0]["w"])
-                            else:
-                                result_cn += result["cw"][0]["w"]
-                        print(result_cn)
-                        self.audio_recognize_queue_output.put(result_cn)
-
-                if result_dict["action"] == "error":
-                    print("rtasr error: " + result)
-                    self.ws.close()
-                    return
-        except websocket.WebSocketConnectionClosedException:
-            print("receive result end")
-        except Exception:
-            pass
-
-    def run(self):
-        begin_time = datetime.now()
-
-        self.receive_recognize_result = threading.Thread(target=self.on_message) #接收识别结果
-        self.receive_recognize_result.daemon = True #设为守护线程
-        self.receive_recognize_result.start()
-
-        self.receive_audio_thread = threading.Thread(target=self.recv_voice_data) #接收音频信号
-        self.receive_audio_thread.daemon = True #守护线程
-        self.receive_audio_thread.start()
-
-        try:
-            while True:
-                if not self.process_is_alive:
-                    break
-                if (datetime.now() - begin_time).seconds > 60:
-                    self.audio_recognize_queue_output.put("timeout") #返回超时错误
-                try:
-                    input_cmd = self.message_queue_input.get(False)  #非阻塞，如果空就抛异常
-                    if input_cmd == "process_end":
-                        self.process_is_alive = False
-                except:
-                    pass
-                chunk = self.get_data(1280)
-                if not chunk:
-                    continue
-                self.ws.send(chunk)
-
-                time.sleep(0.04)
-        finally:
-            pass
-
-        self.ws.send(bytes(self.end_tag.encode('utf-8')))
-        print("send end tag success")
-        self.ws.close()
-
-if __name__ == "__main__":
-    # 测试时候在此处正确填写相关信息即可运行
-    time1 = datetime.now()
-    websocket.enableTrace(False)
-    message_queue = Queue()
-    audio_queue = Queue()
-    testprocess = AudioRecognizeWebsocket(message_queue,audio_queue)
-    testprocess.start()
-    while True:
-        if not testprocess.is_alive():
-            break
-        try:
-            w = audio_queue.get(False)
-            print("外面：",w)
-        except:
-            pass
-        time.sleep(0.1)
-    time2 = datetime.now()
-    print(time2-time1)
+# if __name__ == "__main__":
+#     # 测试时候在此处正确填写相关信息即可运行
+#     time1 = datetime.now()
+#     websocket.enableTrace(False)
+#     message_queue = Queue()
+#     audio_queue = Queue()
+#     testprocess = AudioRecognizeWebsocket(message_queue,audio_queue)
+#     testprocess.start()
+#     while True:
+#         if not testprocess.is_alive():
+#             break
+#         try:
+#             w = audio_queue.get(False)
+#             print("外面：",w)
+#         except:
+#             pass
+#         time.sleep(0.1)
+#     time2 = datetime.now()
+#     print(time2-time1)

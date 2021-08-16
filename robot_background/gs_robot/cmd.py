@@ -7,6 +7,32 @@ import signal
 import requests
 from handle_awake import SafeExamProcess
 
+def open_camera_message(self, param = "", robot_usr = False):
+    back_data = respond_message_creat()
+    if self.camera_message_process == None:
+        try:
+            self.camera_message_process = subprocess.Popen("./camera_message_node")#启动解码程序
+        except Exception as e:
+            back_data = respond_message_creat(msg = f"open_camera_message error1:{e}",successed=False)
+    else:
+        try:
+            self.camera_message_process.send_signal(signal.SIGINT)
+            self.camera_message_process = subprocess.Popen("./camera_message_node")#启动解码程序
+        except Exception as e:
+            back_data = respond_message_creat(msg = f"open_camera_message error2:{e}",successed=False)
+    if not robot_usr:
+        return back_data
+
+def close_camera_message(self, param = "", robot_usr = False):
+    back_data = respond_message_creat()
+    try:
+        if self.camera_message_process != None:
+            self.camera_message_process.send_signal(signal.SIGINT)
+    except Exception as e:
+        back_data = respond_message_creat(msg = f"open_camera_message error2:{e}",successed=False)
+    if not robot_usr:
+        return back_data
+
 def open_voice_exam(self,param = ""):
     self.exam_cmd_queue.put("开始考核")
     back_data = self.respond_message_creat()
@@ -30,6 +56,7 @@ def change_server_ip(self,param = ""):
         back_data = b''
     finally:
         return back_data
+
 def position_navigate(self, param = ""):
     try:
         response = requests.get(f"http://{self.robot_ip}:{self.robot_port}/gs-robot/cmd/position/navigate",params=param, timeout=1)
@@ -73,7 +100,6 @@ def close_video(self, param = "", robot_usr = False):
     if not robot_usr:
         back_data = respond_message_creat()
         return back_data
-
 #打开视频传输
 def open_video_nointer(self, param = "", robot_usr = False):
     # voice_source_path = os.path.split(os.path.realpath(__file__))[0]
@@ -85,13 +111,11 @@ def open_video_nointer(self, param = "", robot_usr = False):
     if not robot_usr:
         back_data = respond_message_creat()
         return back_data
-
 #处理云台控制指令
 def ptz_control(self,  param = ""):
     self.cmd_socket.sendto(("ptz_control?" + param).encode('utf-8'), self.cmd_ip) #向摄像头进程发送指令
     back_data = self.respond_message_creat()
     return back_data
-
 def start_task_queue(self,post_data):
     try:
         param = json.loads(post_data) #生成字典
@@ -165,32 +189,3 @@ def close_speak(self,param = ""):
         time.sleep(1)
         self.speak_process = None
     return back_data
-
-# def handle_close_light(self):
-#     try:
-#         back_data = self.respond_message_creat()
-#         self.light_process = subprocess.Popen("/home/os/testgpio -p 2 -s 0",shell=True)#启动解码程序
-#     except:
-#         back_data = self.respond_message_creat(msg = "light error")
-#     finally:
-#         return back_data
- 
-
-# def handle_open_trumpet(self):
-#     try:
-#         back_data = self.respond_message_creat()
-#         self.trumpet_process = subprocess.Popen("/home/os/testgpio -p 4 -s 1",shell=True)#启动解码程序
-#     except:
-#         back_data = self.respond_message_creat(msg = "trumpet error")
-#     finally:
-#         return back_data
-
-
-# def handle_close_trumpet(self):
-#     try:
-#         back_data = self.respond_message_creat()
-#         self.trumpet_process = subprocess.Popen("/home/os/testgpio -p 4 -s 0",shell=True)#启动解码程序
-#     except:
-#         back_data = self.respond_message_creat(msg = "trumpet error")
-#     finally:
-#         return back_data

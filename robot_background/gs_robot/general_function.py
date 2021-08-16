@@ -31,6 +31,7 @@ def respond_message_creat(status_code=200, data='', errorCode='', msg='successed
 class Param_Init(object):
     def __init__(self):
         #临时线程变量
+        self.camera_message_process = None
         self.video_process = None
         self.light_process = None
         self.trumpet_process = None

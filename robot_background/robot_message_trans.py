@@ -12,7 +12,7 @@ from client_socket import Client_Socket
 from web_socket import robot_device_status_update_Thread, robot_navigate_status_update_Thread
 from gs_robot.robot_thread_class import *
 from gs_robot.general_function import Param_Init
-from gs_robot.cmd import open_video, close_video
+from gs_robot.cmd import open_video, close_video, open_camera_message, close_camera_message
 import gs_robot.data
 from play_voice import PlayVoice, play_system_audio
 from handle_awake import RobotAwakeProcess
@@ -66,12 +66,15 @@ class robot_client_message_process(Client_Socket,Param_Init):
         self.robot_navigate_status_update_thread = robot_navigate_status_update_Thread(("10.7.5.88",8089))
         #状态检查线程
         self.status_check_thread = status_check_Thread(self)
+        #机器人位置信息线程
         self.robot_position_update_thread = robot_position_update_Thread()
         #提交数据线程
         self.robot_device_data_upload_thread = robot_device_data_upload_Thread(self,("101.37.16.240",62223))
-        #获取声音线程
-        self.robot_awake_process = RobotAwakeProcess(("127.0.0.1",8020),self.exam_cmd_queue)
+        #声音相关功能处理线程
+        self.robot_awake_process = RobotAwakeProcess(self.exam_cmd_queue)
+        #温度报警线程
         self.temperature_thread = TemperatureWarnThread(self.robot_device_data_upload_thread)
+        #气体浓度报警线程
         self.gas_thread = GasWarnThread(self.robot_device_data_upload_thread)
 
     def thread_process_start(self): #thread 一定要放在run中跑，不然会不在一个进程
@@ -84,8 +87,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
         self.robot_awake_process.start()
         self.temperature_thread.start()
         self.gas_thread.start()
-
-    
+ 
     #链接成功后向服务器部分注册自己的身份
     def register_identity(self):
         if self.socket_link_flag:
@@ -225,11 +227,11 @@ class robot_client_message_process(Client_Socket,Param_Init):
         # self.thread_process_start()
         self.heart_thread.start() ###########
         self.robot_awake_process.start() ###########
-        self.connect_server()###########
-        self.register_identity()#注册身份###########
+        # self.connect_server()###########
+        # self.register_identity()#注册身份###########
         time.sleep(2)
         play_system_audio('初始化完成')
-        # open_video(self, robot_usr = True ) #打开视频
+        # open_camera_message(self, robot_usr = True)
         while True:
             try:
                 request_data = self.receive_request()
@@ -241,7 +243,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
                     self.process_request(request_data)
             except Exception as e:
                 print(e)
-        close_video(self, robot_usr = True)
+        close_camera_message(self, robot_usr = True)
         self.recv_socket.shutdown(2)
         self.recv_socket.close()
 

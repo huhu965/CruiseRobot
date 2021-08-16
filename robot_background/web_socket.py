@@ -129,14 +129,6 @@ class robot_device_status_update_Thread(Thread, Client_Socket):
             self.robot_device_status_dict['speed'] = device_status['speed']
             self.robot_device_status_dict['sensor1'] = concentration_data['sensor1']
             self.robot_device_status_dict['sensor2'] = concentration_data['sensor2']
-            # if not self.light:
-            #     if self.robot_device_status_dict['sensor1']>25 or self.robot_device_status_dict['sensor2']>25:
-            #         self.light = True
-            #         self.light_process = subprocess.Popen("/home/os/testgpio -p 2 -s 1",shell=True)#启动解码程序
-            # else:
-            #     if self.robot_device_status_dict['sensor1']<25 and self.robot_device_status_dict['sensor2']<25:
-            #         self.light = False
-            #         self.light_process = subprocess.Popen("/home/os/testgpio -p 2 -s 0",shell=True)#启动解码程序
         except Exception as e:
             print("stat",e)
         finally:

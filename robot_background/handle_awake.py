@@ -9,7 +9,7 @@ from threading import Thread
 from multiprocessing import Process, Queue
 from play_voice import PlayVoice
 import random
-from audio_recognize import AudioRecognizeWebsocket ,speech_recognition_Process
+from audio_recognize import AudioRecognizeWebsocket
 
 class BaseVoicePlay(object):
     def __init__(self):
@@ -34,11 +34,8 @@ class BaseVoicePlay(object):
     def close_audio_recognize(self):
         if self.audio_recognize_handle != None:
             self.audio_recognize_handle = None
-    def start_audio_long_recognize(self, input_queue,output_queue):
-        self.audio_recognize_handle =speech_recognition_Process(input_queue,output_queue)
-        self.audio_recognize_handle.start()
 
-
+#考核线程
 class SafeExamProcess(BaseVoicePlay, Process):
     def __init__(self):
         BaseVoicePlay.__init__(self)
@@ -137,13 +134,11 @@ class SafeExamProcess(BaseVoicePlay, Process):
         else:
             self.play_system_audio("考核没通过")
 
-
+#用于处理语音相关的线程类，平时挂在后台
 class RobotAwakeProcess(Process,BaseVoicePlay):
-    def __init__(self,ip_port,cmd_queue):
+    def __init__(self,cmd_queue):
         BaseVoicePlay.__init__(self)
         Process.__init__(self)
-        self.ip_port = ip_port
-        self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #接收音频信号
         self.cmd_queue = cmd_queue
     
     def cmd_slect(self):
@@ -159,7 +154,6 @@ class RobotAwakeProcess(Process,BaseVoicePlay):
             print("cmd_slect",e)
 
     def run(self):
-        # self.receive_socket.bind(self.ip_port)
         while True:
             try:
                 self.cmd_slect()
