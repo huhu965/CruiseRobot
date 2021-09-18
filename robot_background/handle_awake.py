@@ -43,7 +43,7 @@ class SafeExamProcess(BaseVoicePlay, Process):
         self.question_number = 8
         self.audio_recognize_output_queue = Queue()
         self.audio_recognize_input_queue = Queue()
-        self.exam_number = 4
+        self.exam_number = 3
         
     def jaccard_judge(self,input_answer, correct_answer):
         a = set(list(input_answer))

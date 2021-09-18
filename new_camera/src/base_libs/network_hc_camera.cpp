@@ -17,9 +17,18 @@
 
 namespace robot_background{
 NetworkHcCameraHandle::NetworkHcCameraHandle(CameraParam camera_param, 
-                                            NetworkSocketParam network_socket_param
+                                            NetworkSocketParam network_socket_param,
+                                            std::string register_identity,
+                                            int data_store_max_number
                                             )
-    :HcCameraHandle(camera_param),network_socket_param_(network_socket_param){
+                                            :HcCameraHandle(camera_param), 
+                                            network_socket_param_(network_socket_param), 
+                                            data_buff_size_(0),
+                                            data_stamp_(0), 
+                                            data_store_max_number_(data_store_max_number), 
+                                            data_store_number_(0),
+                                            register_identity_(register_identity){
+    memset(&data_buff_, 0, sizeof(data_buff_));
     LogIn();
 }
 /*
@@ -45,6 +54,20 @@ void NetworkHcCameraHandle::ReadTemperature(){
 }
 
 /*
+    * @Description:打开视频实时预览
+*/
+void NetworkHcCameraHandle::VideoBegin(){
+    camera_param.lRealPlayHandle = NET_DVR_RealPlay_V40(camera_param.lUserID, 
+                                                &camera_param.struPlayInfo, 
+                                                NetworkHcCameraHandle::fRealDataCallBack,
+                                                this);//开始取流解码
+    if(camera_param.lRealPlayHandle < 0){
+        std::cout<<"预览播放失败，错误值："<<NET_DVR_GetLastError()<<std::endl;
+    }else{
+        std::cout<<"预览播放成功，返回值："<<camera_param.lRealPlayHandle<<std::endl;
+    }
+}
+/*
     * @Description:打开声音获取
 */
 void NetworkHcCameraHandle::ReadVoice(){
@@ -55,7 +78,48 @@ void NetworkHcCameraHandle::ReadVoice(){
         std::cout<<"声音读取成功，返回值："<<camera_param.lVoiceHanle<<std::endl;
     }
 }
+/*
+    * @Description:链接服务器
+*/
+void NetworkHcCameraHandle::ConnectVideoServer(){
+    while(connect(network_socket_param_.tcp_video_socket, 
+                (struct sockaddr *)&network_socket_param_.tcp_video_server_addr
+                , sizeof(struct sockaddr)) < 0){
+        perror("connect error");
+        std::cout<<register_identity_<<" 服务器不在线"<<std::endl;
+        sleep(5);
+    }
+    send(network_socket_param_.tcp_video_socket, 
+        register_identity_.c_str(), 
+        register_identity_.length(), 
+        MSG_WAITALL); //向服务器端注册是机器人
+}
+/*
+    * @Description:断开链接服务器
+*/
+void NetworkHcCameraHandle::DisconnectVideoServer(){
+    close(network_socket_param_.tcp_video_socket);
+}
 
+void NetworkHcCameraHandle::VideoCmdHandle(){
+    HeadData _recv_head;
+    while(true){
+        memset(&_recv_head, 0, sizeof(HeadData)); //清空
+        recv(network_socket_param_.tcp_video_socket, (char*)&_recv_head, sizeof(HeadData), MSG_WAITALL);
+
+        if(_recv_head.dwDataType == begin_trans)
+        {
+            std::cout<<"begin"<<std::endl;
+            VideoBegin();
+        }
+        else if(_recv_head.dwDataType == end_trans)
+        {
+            std::cout<<"end"<<std::endl;
+            VideoStop();
+        }
+    }
+
+}
 /*
     * @Description:温度数据回调函数
 */
@@ -104,6 +168,50 @@ void CALLBACK NetworkHcCameraHandle::fVoiceDataCallBack(LONG lVoiceComHandle,
                         sizeof(struct sockaddr));
     } 
 }
+/*
+    * @Description:视频回调函数
+*/
+void CALLBACK NetworkHcCameraHandle::fRealDataCallBack(LONG lRealHandle, 
+                                                    DWORD dwDataType, 
+                                                    BYTE *pBuffer, 
+                                                    DWORD dwBufSize, 
+                                                    void *pUser){
+    NetworkHcCameraHandle *_ptr = (NetworkHcCameraHandle *)pUser;
+    HeadData head_data;
+    head_data.dwDataType = dwDataType;
+    head_data.dwBufSize = dwBufSize;
+    
+    if(dwDataType == NET_DVR_SYSHEAD)//系统头通过tcp发送
+    {
+        send(_ptr->network_socket_param_.tcp_video_socket, (char*)&head_data, sizeof(HeadData), MSG_WAITALL);
+        send(_ptr->network_socket_param_.tcp_video_socket, (char*)pBuffer, dwBufSize, MSG_WAITALL);//通过tcp直接发送码流
+        memset(_ptr->data_buff_, 0, sizeof(_ptr->data_buff_)); //清空
+
+        memcpy(_ptr->data_buff_, (char*)&_ptr->data_stamp_, 4);
+        _ptr->data_buff_size_ = 4;
+        _ptr->data_stamp_ ++; //时间戳，用于标记顺序
+    }
+    else{
+        // cout<<dwBufSize<<endl;
+        if(_ptr->data_store_number_ > _ptr->data_store_max_number_) //如果接收到新的一个I帧，就把之前存的发出去
+        {
+            // cout<<"发送视频信息："<<camera_ptr->data_stamp<<"  "<<camera_ptr->data_buff_size<<"  "<<camera_ptr->data_store_number<<endl;
+            sendto(_ptr->network_socket_param_.udp_video_socket, _ptr->data_buff_, _ptr->data_buff_size_,
+            0 , (struct sockaddr *)&_ptr->network_socket_param_.udp_video_server_addr, sizeof(struct sockaddr));
+            memset(_ptr->data_buff_, 0, sizeof(_ptr->data_buff_)); //清空
+
+            memcpy(_ptr->data_buff_, (char*)&_ptr->data_stamp_, 4);
+            memcpy(_ptr->data_buff_+4, pBuffer, dwBufSize);
+            _ptr->data_buff_size_ = dwBufSize + 4;
+            _ptr->data_stamp_ ++; //时间戳，用于标记顺序
+            _ptr->data_store_number_ = 1;
+        }else{
+            memcpy(_ptr->data_buff_ + _ptr->data_buff_size_, pBuffer, dwBufSize);
+            _ptr->data_buff_size_ += dwBufSize;
+            _ptr->data_store_number_ ++;
+        }
+    }
+}
 
 /*
     * @Description:构建指令接收服务器
@@ -124,7 +232,7 @@ void NetworkHcCameraHandle::BuildCmdServer(){
     }
 }
 /*
-    * @Description:构建指令接收服务器
+    * @Description:处理接收到的指令
 */
 void NetworkHcCameraHandle::CmdHandle(){
     char _recv_Buf[512];
@@ -150,4 +258,5 @@ void NetworkHcCameraHandle::CmdHandle(){
         PTZControl(&_url_param);
     }
 }
+
 }

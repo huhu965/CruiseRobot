@@ -137,33 +137,33 @@ class AudioRecognizeWebsocket(Process):
             return b''
         
     def recv_voice_data(self): 
-        CHUNK = 5120#队列长度
-        FORMAT = pyaudio.paInt16 #保存格式
-        CHANNELS = 1  #几个通道
-        RATE = 8000 #采样率，一般8000的采样率能识别出人说的话
-        record_p = pyaudio.PyAudio() #实例化
-        #打开获取流
-        stream = record_p.open(format=FORMAT,
-                channels=CHANNELS,
-                rate=RATE,
-                input=True,
-                frames_per_buffer=CHUNK)
+        # CHUNK = 5120#队列长度
+        # FORMAT = pyaudio.paInt16 #保存格式
+        # CHANNELS = 1  #几个通道
+        # RATE = 8000 #采样率，一般8000的采样率能识别出人说的话
+        # record_p = pyaudio.PyAudio() #实例化
+        # #打开获取流
+        # stream = record_p.open(format=FORMAT,
+        #         channels=CHANNELS,
+        #         rate=RATE,
+        #         input=True,
+        #         frames_per_buffer=CHUNK)
 
         while True:
-            # data, addr = self.receive_socket.recvfrom(5000)
+            data, addr = self.receive_socket.recvfrom(5000)
             # print(len(data))
-            # self.insert_data_tobuff(data)
-            data = stream.read(640)
             self.insert_data_tobuff(data)
+            # data = stream.read(640)
+            # self.insert_data_tobuff(data)
         
-        stream.stop_stream()
-        stream.close()
-        record_p.terminate()
+        # stream.stop_stream()
+        # stream.close()
+        # record_p.terminate()
 
     # 收到websocket连接建立的处理
     def run(self):
         # frameSize = 1280  # 每一帧的音频大小
-        intervel = 0.08  # 发送音频间隔(单位:s)
+        intervel = 0.04  # 发送音频间隔(单位:s)
         status = STATUS_FIRST_FRAME  # 音频的状态信息，标识音频是第一帧，还是中间帧、最后一帧
         begin_time = datetime.now()
         self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

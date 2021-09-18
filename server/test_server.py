@@ -42,7 +42,7 @@ class RecviveRobotData(Thread):
 
 class RecviveRobotVideoNormal(Thread): #接收彩色视频
     def __init__(self):
-        super(RecviveRobotData, self).__init__()
+        super(RecviveRobotVideoNormal, self).__init__()
         self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #udp
         host = socket.gethostname()
         self.receive_socket.bind((host,62220))
@@ -71,7 +71,7 @@ class RecviveRobotVideoNormal(Thread): #接收彩色视频
 
 class RecviveRobotVideoInfrared(Thread): #接收彩色视频
     def __init__(self):
-        super(RecviveRobotData, self).__init__()
+        super(RecviveRobotVideoInfrared, self).__init__()
         self.receive_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #udp
         host = socket.gethostname()
         self.receive_socket.bind((host,62221))

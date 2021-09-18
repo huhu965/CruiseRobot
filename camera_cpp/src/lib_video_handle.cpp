@@ -56,8 +56,8 @@ string transform_TYV12_to_CV8UC3(char * pBuf, int nSize, FRAME_INFO * pFrameInfo
 
         cv::imencode(".jpg", pImg, im_buf,param);
         std::string str_img(im_buf.begin(), im_buf.end());
-        imshow("IPCamera", pImg);
-        waitKey(1);
+        // imshow("IPCamera", pImg);
+        // waitKey(1);
         return str_img;
     }catch(...){
         cout<<"catch (...)"<<endl;
@@ -206,42 +206,42 @@ void CALLBACK voice_DecCBFun(int nPort, char * pBuf, int nSize, FRAME_INFO * pFr
     int err_code = MSP_SUCCESS;
     if(lFrameType == T_AUDIO16)
     {
-        if(awake_param.is_awake == false){
-            char data_Buffer[5000];
-            memset(data_Buffer, 0, sizeof(data_Buffer)); //清空
-            int out_len = 0;
-            // memcpy(data_Buffer,pBuf,nSize);
-            //            输入数组      short长度   输出的数组           输出的字节长度
-            Resample16K((short*)pBuf ,nSize/2, (short*)data_Buffer, out_len);//8K转为16k
-            // cout<<out_len<<endl;
-            err_code = QIVWAudioWrite(awake_param.session_id, 
-                                    (const void *)data_Buffer, 
-                                    out_len, 
-                                    awake_param.audio_stat);
-            // int num = sendto(normal_camera.voice_upload_socket, data_Buffer, out_len,
-            //     0 , (struct sockaddr *)&normal_camera.voice_addr, sizeof(struct sockaddr));
-            // cout<<"发送："<<num<<endl;
-            if (MSP_SUCCESS != err_code)
-            {
-                printf("QIVWAudioWrite failed! error code:%d\n",err_code);
-                char sse_hints[128];
-                snprintf(sse_hints, sizeof(sse_hints), "QIVWAudioWrite errorCode=%d", err_code);
-                QIVWSessionEnd(awake_param.session_id, sse_hints);
-                awake_param.session_id = NULL;
-            }
-            // cout<<"ok"<<endl;
-            if (MSP_AUDIO_SAMPLE_FIRST == awake_param.audio_stat)
-            {
-                awake_param.audio_stat = MSP_AUDIO_SAMPLE_CONTINUE;
-            }
-        }
-        else{ //如果唤醒了，就传数据
+        // if(awake_param.is_awake == false){
+        //     char data_Buffer[5000];
+        //     memset(data_Buffer, 0, sizeof(data_Buffer)); //清空
+        //     int out_len = 0;
+        //     // memcpy(data_Buffer,pBuf,nSize);
+        //     //            输入数组      short长度   输出的数组           输出的字节长度
+        //     Resample16K((short*)pBuf ,nSize/2, (short*)data_Buffer, out_len);//8K转为16k
+        //     // cout<<out_len<<endl;
+        //     err_code = QIVWAudioWrite(awake_param.session_id, 
+        //                             (const void *)data_Buffer, 
+        //                             out_len, 
+        //                             awake_param.audio_stat);
+        //     // int num = sendto(normal_camera.voice_upload_socket, data_Buffer, out_len,
+        //     //     0 , (struct sockaddr *)&normal_camera.voice_addr, sizeof(struct sockaddr));
+        //     // cout<<"发送："<<num<<endl;
+        //     if (MSP_SUCCESS != err_code)
+        //     {
+        //         printf("QIVWAudioWrite failed! error code:%d\n",err_code);
+        //         char sse_hints[128];
+        //         snprintf(sse_hints, sizeof(sse_hints), "QIVWAudioWrite errorCode=%d", err_code);
+        //         QIVWSessionEnd(awake_param.session_id, sse_hints);
+        //         awake_param.session_id = NULL;
+        //     }
+        //     // cout<<"ok"<<endl;
+        //     if (MSP_AUDIO_SAMPLE_FIRST == awake_param.audio_stat)
+        //     {
+        //         awake_param.audio_stat = MSP_AUDIO_SAMPLE_CONTINUE;
+        //     }
+        // }
+        // else{ //如果唤醒了，就传数据
             //            输入数组      short长度   输出的数组           输出的字节长度
             // Resample16K((short*)pBuf ,nSize/2, (short*)data_Buffer, out_len);//8K转为16k
             int num = sendto(normal_camera.voice_upload_socket, pBuf, nSize,
                         0 , (struct sockaddr *)&normal_camera.voice_addr, sizeof(struct sockaddr));
             // cout<<num<<endl;
-        }
+        // }
     }
 }
 // 解码回调 视频为YUV数据(YV12)，音频为PCM数据
@@ -299,7 +299,7 @@ void CALLBACK RemoteConfigCallback(DWORD dwType, void *lpBuffer, DWORD dwBufLen,
                                     _temperature_ptr->struLinePolygonThermCfg.fMaxTemperature,
                                     _temperature_ptr->struLinePolygonThermCfg.fMinTemperature,
                                     _temperature_ptr->struLinePolygonThermCfg.fAverageTemperature);
-            std::cout<<data_buff<<endl;
+            // std::cout<<data_buff<<endl;
             int num = sendto(infrared_camera.socket_udp, data_buff, data_size,
                          0 , (struct sockaddr *)&infrared_camera.udp_server_addr, sizeof(struct sockaddr));
         }

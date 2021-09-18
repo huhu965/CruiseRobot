@@ -44,7 +44,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow, Callback):
 
         self.video_open_callback()
         self.init_software()
-
+    
     
     def init_software(self):
         #地图
@@ -130,7 +130,7 @@ class MyMainWindow(QMainWindow, Ui_MainWindow, Callback):
         self.map_png_callback_location()#直接本地读图片
 
     def task_tabview_display(self):
-        param_dict = {"1xuncha0":"1区巡查点1","1bang":"1区泵房",
+        param_dict = {"1xuncha0":"1区巡查点1","1beng":"1区泵房",
                     "1xuncha2":"1区巡查点2","7beng":"7区泵房",
                     "7ruanguan1":"7区软管区","7navi1":"7区巡查点1",
                     "7navi2":"7区巡查点2","1xuncha3":"1区巡查点3",

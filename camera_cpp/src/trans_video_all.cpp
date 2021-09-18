@@ -108,7 +108,7 @@ void *video_handle_func(void* args){
     if(!_camera_param_ptr->have_voice){
         _read_temperature(_camera_param_ptr);
     }
-    // _video_begin(_camera_param_ptr);
+    _video_begin(_camera_param_ptr);
     while(true){
         memset(&_recv_head, 0, sizeof(HeadData)); //清空
         recv(_camera_param_ptr->socket_tcp, (char*)&_recv_head, sizeof(HeadData), MSG_WAITALL);
@@ -166,7 +166,7 @@ void param_init(){
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(62222);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
-    addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    addr.sin_addr.s_addr = inet_addr("47.97.11.25");
     // addr.sin_addr.s_addr = inet_addr("10.7.5.127");
 
     normal_camera.server_addr = addr;
@@ -175,13 +175,13 @@ void param_init(){
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(62220);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
-    addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    addr.sin_addr.s_addr = inet_addr("47.97.11.25");
     normal_camera.video_udp_addr = addr;
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(62221);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
-    addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    addr.sin_addr.s_addr = inet_addr("47.97.11.25");
     infrared_camera.video_udp_addr = addr;
     //设置指令接收地址
     memset(&addr, 0, sizeof(addr));
@@ -249,12 +249,12 @@ void param_init(){
     infrared_camera.data_store_max_number = 2;
     infrared_camera.data_store_number = 0;
 
-    awake_param.grammar_list = NULL;
-    awake_param.login_param = "appid = 35dcd3b2,work_dir = .";
-    awake_param.session_begin_params = "ivw_threshold=0:500,sst=wakeup,ivw_res_path =fo|res/ivw/wakeupresource.jet";
-    awake_param.session_id = NULL;
-    awake_param.audio_stat = MSP_AUDIO_SAMPLE_FIRST;
-    awake_param.is_awake = false;
+    // awake_param.grammar_list = NULL;
+    // awake_param.login_param = "appid = 35dcd3b2,work_dir = .";
+    // awake_param.session_begin_params = "ivw_threshold=0:500,sst=wakeup,ivw_res_path =fo|res/ivw/wakeupresource.jet";
+    // awake_param.session_id = NULL;
+    // awake_param.audio_stat = MSP_AUDIO_SAMPLE_FIRST;
+    // awake_param.is_awake = false;
 }
 
 //程序初始化函数
@@ -281,18 +281,10 @@ void Init(){
     if (rc2){
         cout << "Error:无法创建线程:" << rc2 << endl;
     }
-    int rc3 = pthread_create(&voice_awake_thread, NULL, voice_awake,&awake_param);//创建接收命令线程
-    if (rc3){
-        cout << "Error:无法创建线程:" << rc3 << endl;
-    }
-    // cout << "线程2" << endl;
-    // int rc4 = pthread_create(&heart_send_thread1, NULL, heart_func,&normal_camera);//创建接收命令线程
-    // if (rc4){
-    //     cout << "Error:无法创建线程:" << rc4 << endl;
-    // }    
-    // int rc5 = pthread_create(&heart_send_thread2, NULL, heart_func,&infrared_camera);//创建接收命令线程
-    // if (rc5){
-    //     cout << "Error:无法创建线程:" << rc5 << endl;
+
+    // int rc3 = pthread_create(&voice_awake_thread, NULL, voice_awake,&awake_param);//创建接收命令线程
+    // if (rc3){
+    //     cout << "Error:无法创建线程:" << rc3 << endl;
     // }
 }
 

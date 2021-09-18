@@ -1,7 +1,7 @@
-robot_ip = "101.37.16.240"
-robot_port = 62222
-# robot_ip = "10.7.5.88"
-# robot_port = 8080
+# robot_ip = "47.97.11.25"
+# robot_port = 62222
+robot_ip = "10.7.5.88"
+robot_port = 8080
 
 API = {
     #real_time_data

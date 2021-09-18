@@ -87,7 +87,7 @@ class HcCameraHandle{
         /*
          * @Description:开始视频传输
         */
-        void VideoBegin();
+        virtual void VideoBegin();
         /*
          * @Description:关闭视频传输
         */

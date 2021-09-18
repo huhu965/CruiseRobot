@@ -15,6 +15,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <memory>
+#include <pthread.h>
 
 #include "robot_background/network_hc_camera.hpp"
 
@@ -22,8 +23,21 @@ using namespace robot_background;
 
 bool process_run = true;
 
+pthread_t video_handle_thread;
+pthread_t infrared_video_handle_thread;
+
 void MySigintHandler(int sig){
     process_run = false;
+}
+
+//摄像头传输
+void *video_handle_func(void* args){
+    NetworkHcCameraHandle *_ptr = (NetworkHcCameraHandle*)args;
+
+    _ptr->ConnectVideoServer(); //链接服务器
+    _ptr->VideoCmdHandle();
+
+    pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[]){
@@ -62,30 +76,78 @@ int main(int argc, char *argv[]){
     addr.sin_port = htons(8002);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     network_param.udp_command_addr = addr;
+    //视频传输参数
+    network_param.tcp_video_socket = socket(AF_INET, SOCK_STREAM, 0);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(62222);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
+    addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    network_param.tcp_video_server_addr = addr;
 
+    network_param.udp_video_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(62220);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
+    addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    network_param.udp_video_server_addr = addr;
     //音频传输网络初始
     network_param.udp_client_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    addr.sin_family = AF_INET;
     addr.sin_port = htons(8021);
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     network_param.udp_server_addr = addr;
-    std::shared_ptr<NetworkHcCameraHandle> voice_pub_ptr = std::make_shared<NetworkHcCameraHandle>(camera_param, network_param);
+    //摄像头启动
+    std::shared_ptr<NetworkHcCameraHandle> voice_pub_ptr = std::make_shared<NetworkHcCameraHandle>(camera_param, 
+                                                                                                    network_param,
+                                                                                                    "robot_video \r\n");
     voice_pub_ptr->ReadVoice();
     voice_pub_ptr->BuildCmdServer();
 
-    //温度传输
-    camera_param.addr_camera = (char*)"10.7.5.122";
+    int rc1 = pthread_create(&video_handle_thread, NULL, video_handle_func,voice_pub_ptr.get());
+    if (rc1){
+        std::cout << "Error:无法创建线程:" << rc1 << std::endl;
+    }
 
+    /////////////   红外摄像头设置
+    memset(&network_param, 0, sizeof(network_param));
+    //红外摄像头地址
+    camera_param.addr_camera = (char*)"10.7.5.122";
+    //视频传输参数
+    network_param.tcp_video_socket = socket(AF_INET, SOCK_STREAM, 0);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(62222);
+    addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    network_param.tcp_video_server_addr = addr;
+    
+    network_param.udp_video_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(62221);
+    addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    network_param.udp_video_server_addr = addr;
+    //温度传输网络初始化
     network_param.udp_client_socket = socket(AF_INET, SOCK_DGRAM, 0);
+    addr.sin_family = AF_INET;
     addr.sin_port = htons(8022);
+    addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     network_param.udp_server_addr = addr;
-    std::shared_ptr<NetworkHcCameraHandle> temp_pub_ptr = std::make_shared<NetworkHcCameraHandle>(camera_param, network_param);
+    //红外摄像头启动
+    std::shared_ptr<NetworkHcCameraHandle> temp_pub_ptr = std::make_shared<NetworkHcCameraHandle>(camera_param, 
+                                                                                                    network_param,
+                                                                                                    "robot_video_red \r\n");
     temp_pub_ptr->ReadTemperature();
+
+    int rc2 = pthread_create(&video_handle_thread, NULL, video_handle_func,temp_pub_ptr.get());
+    if (rc2){
+        std::cout << "Error:无法创建线程:" << rc2 << std::endl;
+    }
 
     while(process_run){
         voice_pub_ptr->CmdHandle();
     }
 
+    voice_pub_ptr->VideoStop();
     voice_pub_ptr->CloseReadVoice();
     voice_pub_ptr->LogOut();
+    
+    temp_pub_ptr->VideoStop();
     temp_pub_ptr->CloseReadTemperature();
     temp_pub_ptr->LogOut();
     //释放SDK资源

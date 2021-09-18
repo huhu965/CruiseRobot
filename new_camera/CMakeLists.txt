@@ -21,9 +21,12 @@ list(REMOVE_ITEM ALL_SRCS ${REMOVE_CMAKE})
 
 add_executable(camera_message_node src/camera_message_node.cpp ${ALL_SRCS})
 target_link_libraries(camera_message_node ${ALL_TARGET_LIBRARIES})
+target_link_libraries(camera_message_node pthread.so)
 
+message("${PROJECT_SOURCE_DIR}")
+message("${CMAKE_CURRENT_SOURCE_DIR}")
 
-# SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE) 
+# SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 # SET(CMAKE_INSTALL_RPATH ${CMAKE_CURRENT_SOURCE_DIR}/libs) #指定运行时动态库的加载路径,ORIGIN指运行文件所在目录
 # SET(CMAKE_INSTALL_RPATH "\${ORIGIN}/lib") #指定运行时动态库的加载路径,ORIGIN指运行文件所在目录
 # ${ORIGIN}是指运行程序所在目录，如果你的lib放在其它路径下，你就改为你的路径即可

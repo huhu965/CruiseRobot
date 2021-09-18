@@ -69,7 +69,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
         #机器人位置信息线程
         self.robot_position_update_thread = robot_position_update_Thread()
         #提交数据线程
-        self.robot_device_data_upload_thread = robot_device_data_upload_Thread(self,("101.37.16.240",62223))
+        self.robot_device_data_upload_thread = robot_device_data_upload_Thread(self,("47.97.11.25",62223))
         #声音相关功能处理线程
         self.robot_awake_process = RobotAwakeProcess(self.exam_cmd_queue)
         #温度报警线程
@@ -224,14 +224,14 @@ class robot_client_message_process(Client_Socket,Param_Init):
             self.respond_send(back_data)
     #运行
     def run(self):
-        # self.thread_process_start()
-        self.heart_thread.start() ###########
-        self.robot_awake_process.start() ###########
-        # self.connect_server()###########
-        # self.register_identity()#注册身份###########
+        self.thread_process_start()
+        # self.heart_thread.start() ###########
+        # self.robot_awake_process.start() ###########
+        self.connect_server()###########
+        self.register_identity()#注册身份###########
         time.sleep(2)
         play_system_audio('初始化完成')
-        # open_camera_message(self, robot_usr = True)
+        # open_video(self, robot_usr = True)
         while True:
             try:
                 request_data = self.receive_request()
@@ -243,18 +243,20 @@ class robot_client_message_process(Client_Socket,Param_Init):
                     self.process_request(request_data)
             except Exception as e:
                 print(e)
-        close_camera_message(self, robot_usr = True)
+        close_video(self, robot_usr = True)
         self.recv_socket.shutdown(2)
         self.recv_socket.close()
 
 def main():
     play_system_audio('开始初始化')
-    # time.sleep(140)
-    server_ip =  ('101.37.16.240', 62222)#服务器的公网地址和端口
+    time.sleep(120)
+    server_ip =  ('47.97.11.25', 62222)#服务器的公网地址和端口
     request_process = robot_client_message_process(server_ip)
     request_process.run()
 
 if __name__ == '__main__':
     main()
 
+
+#20119
     

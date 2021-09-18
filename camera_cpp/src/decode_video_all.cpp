@@ -101,7 +101,7 @@ void param_init(){
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
     addr.sin_port = htons(62222);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
-    addr.sin_addr.s_addr = inet_addr("101.37.16.240");
+    addr.sin_addr.s_addr = inet_addr("47.97.11.25");
     // addr.sin_addr.s_addr = inet_addr("10.7.5.127");
 
     normal_camera.server_addr = addr;

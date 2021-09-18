@@ -65,24 +65,24 @@ import os
 
 # 加载地图
 # param = {"map_name":"factory"}
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['load_map']}", params = param, timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['cancel_navigate']}", params = param, timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['delete_map']}", params = param, timeout=5)delete_map
 # 转圈初始化
 
 # param = {"map_name":"factoryall","init_point_name":"厂区入口"}
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['initialize']}", params =param, timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['cancle_task_queue']}", timeout=5)
 
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_light']}", timeout=5)
-response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_video']}", timeout=5)
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}/gs-robot/cmd/open_video_nointer", timeout=5)
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['close_video']}", timeout=5)
+# # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}/gs-robot/cmd/open_video_nointer", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['device_status']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_voice_exam']}", timeout=5)
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['gps_raw']}", timeout=5)
+response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['gps_raw']}", timeout=5)
 # # 查看地图的点列表
 
-# param = {"map_name":"factoryall","type":2}
+# param = {"map_name":"002","type":2}
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['positions']}", params=param, timeout=3)
 
 # 获取地图图片
