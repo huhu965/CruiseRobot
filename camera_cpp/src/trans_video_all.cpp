@@ -27,7 +27,6 @@ void FunctionRegister()
     FunctionMap["video_begin"] = video_begin;
     FunctionMap["video_stop"] = video_stop;
     FunctionMap["ptz_control"] = PTZ_control;
-    FunctionMap["voice_sleep"] = voice_sleep;
 }
 //退出收尾函数
 void exit_func(int sig){
@@ -40,60 +39,58 @@ void exit_func(int sig){
     NET_DVR_StopRemoteConfig(infrared_camera.lTemperatureHandle);
     NET_DVR_Logout(normal_camera.lUserID);
     NET_DVR_Logout(infrared_camera.lUserID);
-    QIVWSessionEnd(awake_param.session_id, "close");
-    MSPLogout();
     //释放SDK资源
     NET_DVR_Cleanup();
     exit(sig);
 }
-void* voice_awake(void* args)
-{
-    VoiceAwakeParamPtr _awake_param_ptr = (VoiceAwakeParam*)args;
-    int ret = MSP_SUCCESS;
-    //登录
-    ret = MSPLogin(NULL, NULL, _awake_param_ptr->login_param);
-    if (MSP_SUCCESS != ret){
-        printf("MSPLogin failed, error code: %d.\n", ret);
-        MSPLogout(); //退出登录
-    }
+// void* voice_awake(void* args)
+// {
+//     VoiceAwakeParamPtr _awake_param_ptr = (VoiceAwakeParam*)args;
+//     int ret = MSP_SUCCESS;
+//     //登录
+//     ret = MSPLogin(NULL, NULL, _awake_param_ptr->login_param);
+//     if (MSP_SUCCESS != ret){
+//         printf("MSPLogin failed, error code: %d.\n", ret);
+//         MSPLogout(); //退出登录
+//     }
 
-    while (true){ //循环开启唤醒检测
-        int err_code = MSP_SUCCESS;
-        char sse_hints[128];
-        //初始化唤醒
-        // cout<<"唤醒检测"<<endl;
-        _awake_param_ptr->session_id=QIVWSessionBegin(_awake_param_ptr->grammar_list, 
-                                                    _awake_param_ptr->session_begin_params, 
-                                                    &err_code);
-        if (err_code != MSP_SUCCESS){
-            printf("QIVWSessionBegin failed! error code:%d\n",err_code);
-            QIVWSessionEnd(_awake_param_ptr->session_id, "begin error");
-            _awake_param_ptr->session_id = NULL;
-            sleep(1);
-            continue;
-        }
-        //注册回调函数
-        err_code = QIVWRegisterNotify(_awake_param_ptr->session_id, cb_ivw_msg_proc,_awake_param_ptr);
-        if (err_code != MSP_SUCCESS){
-            snprintf(sse_hints, sizeof(sse_hints), "QIVWRegisterNotify errorCode=%d", err_code);
-            printf("QIVWRegisterNotify failed! error code:%d\n",err_code);
-            QIVWSessionEnd(_awake_param_ptr->session_id, sse_hints); //释放资源
-            _awake_param_ptr->session_id = NULL;
-            sleep(1);
-            continue;
-        }
-        while (true){
-            if (_awake_param_ptr->session_id == NULL && _awake_param_ptr->is_awake == false){
-                _voice_sleep(_awake_param_ptr);
-                cout<<"睡眠"<<endl;
-                break;
-            }
-            else{
-                sleep(1);
-            }
-        }  
-    }
-}
+//     while (true){ //循环开启唤醒检测
+//         int err_code = MSP_SUCCESS;
+//         char sse_hints[128];
+//         //初始化唤醒
+//         // cout<<"唤醒检测"<<endl;
+//         _awake_param_ptr->session_id=QIVWSessionBegin(_awake_param_ptr->grammar_list, 
+//                                                     _awake_param_ptr->session_begin_params, 
+//                                                     &err_code);
+//         if (err_code != MSP_SUCCESS){
+//             printf("QIVWSessionBegin failed! error code:%d\n",err_code);
+//             QIVWSessionEnd(_awake_param_ptr->session_id, "begin error");
+//             _awake_param_ptr->session_id = NULL;
+//             sleep(1);
+//             continue;
+//         }
+//         //注册回调函数
+//         err_code = QIVWRegisterNotify(_awake_param_ptr->session_id, cb_ivw_msg_proc,_awake_param_ptr);
+//         if (err_code != MSP_SUCCESS){
+//             snprintf(sse_hints, sizeof(sse_hints), "QIVWRegisterNotify errorCode=%d", err_code);
+//             printf("QIVWRegisterNotify failed! error code:%d\n",err_code);
+//             QIVWSessionEnd(_awake_param_ptr->session_id, sse_hints); //释放资源
+//             _awake_param_ptr->session_id = NULL;
+//             sleep(1);
+//             continue;
+//         }
+//         while (true){
+//             if (_awake_param_ptr->session_id == NULL && _awake_param_ptr->is_awake == false){
+//                 _voice_sleep(_awake_param_ptr);
+//                 cout<<"睡眠"<<endl;
+//                 break;
+//             }
+//             else{
+//                 sleep(1);
+//             }
+//         }  
+//     }
+// }
 
 //摄像头传输
 void *video_handle_func(void* args){
@@ -107,8 +104,10 @@ void *video_handle_func(void* args){
     _login_camera(_camera_param_ptr); //登录摄像头
     if(!_camera_param_ptr->have_voice){
         _read_temperature(_camera_param_ptr);
+    }else{
+        _read_voice(_camera_param_ptr);
     }
-    _video_begin(_camera_param_ptr);
+    // _video_begin(_camera_param_ptr);
     while(true){
         memset(&_recv_head, 0, sizeof(HeadData)); //清空
         recv(_camera_param_ptr->socket_tcp, (char*)&_recv_head, sizeof(HeadData), MSG_WAITALL);

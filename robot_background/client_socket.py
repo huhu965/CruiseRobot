@@ -27,7 +27,7 @@ class Client_Socket(object):
                 self.recv_socket.connect(self.server_ip)#尝试链接服务器
                 break
             except Exception as e:
-                print(e,self.server_ip)
+                print(datetime.datetime.now(),e,self.server_ip)
                 play_system_audio("链接服务器失败")
                 time.sleep(10)
         self.socket_link_flag = True

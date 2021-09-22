@@ -73,13 +73,13 @@ import os
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['cancle_task_queue']}", timeout=5)
 
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_light']}", timeout=5)
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
+response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_video']}", timeout=5)
 # # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}/gs-robot/cmd/open_video_nointer", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['device_status']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_voice_exam']}", timeout=5)
-response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['gps_raw']}", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['gps_raw']}", timeout=5)
 # # 查看地图的点列表
 
 # param = {"map_name":"002","type":2}

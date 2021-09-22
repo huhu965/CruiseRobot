@@ -35,6 +35,10 @@
 #define end_trans 23
 #define heart_test 24
 
+/*
+ * @Description:设置从设备读取的音频格式，0是编码后数据，1是原始pcm数据
+*/
+#define AUDIO_DATA_TYPE 1 
 //函数指针
 typedef void (*create_fun)(void* args);
 
@@ -51,6 +55,7 @@ typedef struct
     LONG lRealPlayHandle;
     LONG nPort;
     LONG lTemperatureHandle;
+    LONG lVoiceHanle;
     NET_DVR_DEVICEINFO_V30 struDeviceInfo;//注册设备结构
     NET_DVR_PREVIEWINFO struPlayInfo;//预览结构
     std::string register_identity;
@@ -118,6 +123,12 @@ void CALLBACK voice_DecCBFun(int nPort, char * pBuf, int nSize, FRAME_INFO * pFr
 void CALLBACK g_ExceptionCallBack(DWORD dwType, LONG lUserID, LONG lHandle, void *pUser);
 /*视频流回调函数*/
 void CALLBACK fRealDataCallBack(LONG lRealHandle, DWORD dwDataType, BYTE *pBuffer, DWORD dwBufSize, void *pUser);
+/*音频流回调函数*/
+void CALLBACK fVoiceDataCallBack(LONG lVoiceComHandle, 
+                                char *pRecvDataBuffer, 
+                                DWORD dwBufSize, 
+                                BYTE byAudioFlag, 
+                                void*pUser);
 /*云台控制函数*/
 void _PTZ_control(void* args);
 /*打开视频函数*/
@@ -136,6 +147,8 @@ void _close_cmd_server(void* args);
 void _login_camera(void* args);
 /*建立读取温度长链接*/
 void _read_temperature(void* args);
+/*建立音频长链接*/
+void _read_voice(void* args);
 /*语音被唤醒后恢复休眠等待下一次唤醒*/
 void _voice_sleep(void* args);
 /*字符串分割函数*/

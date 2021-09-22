@@ -55,13 +55,17 @@ class robot_status_heart_Thread(Thread): #机器人状态链接心跳线程
 
     def run(self): # 在启动线程后任务从这个函数里面开始执行
         while True:
-            #链接了，发送了心跳包都没有回应，就认为链接已经被服务器关掉了
-            if (datetime.datetime.now() - self.main_process.last_receive_time).seconds > 35 and self.main_process.socket_link_flag:
-                self.main_process.close_link()
-                #重新链接
-                self.main_process.connect_server()
-                self.register_to_server()
-            time.sleep(5)
+            try:
+                #链接了，发送了心跳包都没有回应，就认为链接已经被服务器关掉了
+                if (datetime.datetime.now() - self.main_process.last_receive_time).seconds > 35 and self.main_process.socket_link_flag:
+                    self.main_process.close_link()
+                    #重新链接
+                    self.main_process.connect_server()
+                    self.main_process.register_to_server()
+            except Exception as e:
+                print(e)
+            finally:
+                time.sleep(5)
 #websocket,机器人会自动推送状态信息等
 # "GET /gs-robot/notice/system_health_status HTTP/1.1\r\n
 # Host: 10.7.5.88:8089\r\n
@@ -86,6 +90,8 @@ class robot_device_status_update_Thread(Thread, Client_Socket):
         "Connection": "Connection: Upgrade",
         "Sec-WebSocket-Key": "Sec-WebSocket-Key: 42qlQSy1wUUqaq2veduEbQ==",}
         self.robot_device_status_dict = {}
+        self.robot_device_status_dict['sensor1'] = -1
+        self.robot_device_status_dict['sensor2'] = -1
 
         self.gasConcentration_thread = gasConcentration_Thread()
         self.gasConcentration_thread.start()
@@ -142,15 +148,28 @@ class robot_device_status_update_Thread(Thread, Client_Socket):
             return False
 
     def run(self):
+        print("读取状态服务器")
         self.connect_server()
+        print("读取状态服务器链接成功")
         self.register_to_server()
+        status_data = b''
         while True:
             try:
-                status_data = self.recv_socket.recv(5000)
+                recv_data = self.recv_socket.recv(5000)
                 self.update_last_receive_time()
-                self.update_data(status_data)
+
+                status_data += recv_data
+                once_data_end_index = status_data.find(b'\n')
+                if once_data_end_index == -1: #没找到\n
+                    continue
+                else:
+                    self.update_data(status_data[:once_data_end_index+1])
+                    if once_data_end_index+1 >= len(status_data):
+                        status_data = b""
+                    else:
+                        status_data = status_data[once_data_end_index+1:]
             except Exception as e:
-                print(e)
+                print("device_status run", e)
 #获取导航状态信息
 class robot_navigate_status_update_Thread(Thread, Client_Socket):
     def __init__(self, server_ip):
@@ -222,6 +241,7 @@ class robot_navigate_status_update_Thread(Thread, Client_Socket):
     #线程运行
     def run(self):
         # print(f"导航状态 子进程{os.getpid()} 开始执行，父进程为{os.getppid()}")
+        print("读取导航状态服务器")
         self.connect_server()
         self.register_to_server()
         while True:

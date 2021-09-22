@@ -110,6 +110,8 @@ class robot_scan_mode_process(Thread):
         for task in self.tasks:
             if task['name'] == 'NavigationTask':
                 self.NavigationTask(task["start_param"])
+                if self.cancle_task:
+                    break
                 self.CheckTask()
             if self.cancle_task:
                 break
@@ -224,13 +226,13 @@ class robot_device_data_upload_Thread(Thread):
         try:
             return float(self.temperature["max_temperature"])
         except Exception as e:
-            print("提交数据线程",e)
+            print("提交数据线程温度",e)
     #返回元组，有两个数据
     def get_sensor_concentration(self):
         try:
             return (float(self.sensor['sensor1']),float(self.sensor['sensor2']))
         except Exception as e:
-            print("提交数据线程",e)
+            print("提交数据线程气体浓度",e)
 
     def device_data_upload(self,data):#向服务器提交数据
         self.send_socket.sendto((data + '\r\n\r\n').encode("utf-8"), self.server_ip);
@@ -249,7 +251,7 @@ class robot_device_data_upload_Thread(Thread):
             self.sensor['sensor2'] = device_data['sensor2']
             self.device_data_upload(json.dumps(device_data))
         except Exception as e:
-            print("提交数据线程",e)
+            print("提交数据线程run",e)
     
     def run(self):
         while True:
@@ -301,7 +303,8 @@ class robot_position_update_Thread(Thread):
                 self.update_data(response.content)
                 time.sleep(2)
             except Exception as e:
-                print(e)  
+                # print(e) 
+                time.sleep(5) 
 
 class SpeakProcess(Process):
     # 初始化

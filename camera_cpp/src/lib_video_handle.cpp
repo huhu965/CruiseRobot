@@ -56,33 +56,12 @@ string transform_TYV12_to_CV8UC3(char * pBuf, int nSize, FRAME_INFO * pFrameInfo
 
         cv::imencode(".jpg", pImg, im_buf,param);
         std::string str_img(im_buf.begin(), im_buf.end());
-        // imshow("IPCamera", pImg);
-        // waitKey(1);
+        imshow("IPCamera", pImg);
+        waitKey(1);
         return str_img;
     }catch(...){
         cout<<"catch (...)"<<endl;
         return "";
-    }
-}
-//语音唤醒回调函数
-int cb_ivw_msg_proc( const char *sessionID, int msg, int param1, int param2, const void *info, void *userData )
-{
-    VoiceAwakeParamPtr _awake_param_ptr = (VoiceAwakeParam*)userData;
-	if (MSP_IVW_MSG_ERROR == msg) //唤醒出错消息
-	{
-        char sse_hints[128];
-        snprintf(sse_hints, sizeof(sse_hints), "QIVWAudioWrite errorCode=%d", param1);
-        QIVWSessionEnd(_awake_param_ptr->session_id, sse_hints);
-        _awake_param_ptr->session_id = NULL;
-	}
-	else if (MSP_IVW_MSG_WAKEUP == msg) //唤醒成功消息
-	{
-        _awake_param_ptr->is_awake = true;
-        //向语音识别发送指令，已经被唤醒
-        std::string awake_commond = "GET /gs_robot/cmd/voice_awake\r\n";
-        int num = sendto(normal_camera.voice_upload_socket, awake_commond.c_str(), awake_commond.length(),
-                    0 , (struct sockaddr *)&normal_camera.voice_cmd_addr, sizeof(struct sockaddr));
-        //这里没有用锁，有可能数据冲突出错误
     }
 }
 
@@ -135,53 +114,74 @@ void CALLBACK fRealDataCallBack(LONG lRealHandle, DWORD dwDataType, BYTE *pBuffe
         }
     }
 
-    if(camera_ptr->have_voice == true){
-        switch (dwDataType)
-        {
-            case NET_DVR_SYSHEAD: //系统头
-                if (!PlayM4_GetPort(&camera_ptr->nPort)){  //获取播放库未使用的通道号
-                    cout<<"获取播放库号失败"<<endl;
-                }
-                if (!PlayM4_SetStreamOpenMode(camera_ptr->nPort, STREAME_REALTIME)){  //设置实时流播放模式
-                    cout<<"设置实时流播放模式失败"<<endl;
-                }
-                if (!PlayM4_OpenStream(camera_ptr->nPort, pBuffer, dwBufSize, 10 * 1024 * 1024)){ //打开流接口
-                    cout<<"打开流接口失败"<<endl;
-                }
-                if (!PlayM4_SetDecCallBack(camera_ptr->nPort, voice_DecCBFun)){//设置解码回调函数，获取解码后的数据
-                    cout<<"设置解码回调函数失败"<<endl;
-                }
-                if (!PlayM4_Play(camera_ptr->nPort, NULL)){ //播放开始
-                    cout<<"播放失败"<<endl;
-                }
-                //打开音频解码, 需要码流是复合流
-                if (!PlayM4_PlaySound(camera_ptr->nPort))
-                {
-                    cout<<"音频播放失败"<<endl;
-                } 
-                break;
-            case NET_DVR_STREAMDATA:
-                if (dwBufSize > 0 && camera_ptr->nPort != -1)
-                {
-                    if (!PlayM4_InputData(camera_ptr->nPort, pBuffer, dwBufSize))
-                        {
-                            cout << "error" << PlayM4_GetLastError(camera_ptr->nPort) << endl;
-                            break;
-                        }
-                }
-                break;
-            default:
-                //其他数据
-                if (dwBufSize > 0 && camera_ptr->nPort != -1)
-                {
-                    if (!PlayM4_InputData(camera_ptr->nPort, pBuffer, dwBufSize))
-                    {
-                        break;
-                    }
-                }
-                break;
-        }
-    }
+    // if(camera_ptr->have_voice == true){
+    //     switch (dwDataType)
+    //     {
+    //         case NET_DVR_SYSHEAD: //系统头
+    //             if (!PlayM4_GetPort(&camera_ptr->nPort)){  //获取播放库未使用的通道号
+    //                 cout<<"获取播放库号失败"<<endl;
+    //             }
+    //             if (!PlayM4_SetStreamOpenMode(camera_ptr->nPort, STREAME_REALTIME)){  //设置实时流播放模式
+    //                 cout<<"设置实时流播放模式失败"<<endl;
+    //             }
+    //             if (!PlayM4_OpenStream(camera_ptr->nPort, pBuffer, dwBufSize, 10 * 1024 * 1024)){ //打开流接口
+    //                 cout<<"打开流接口失败"<<endl;
+    //             }
+    //             if (!PlayM4_SetDecCallBack(camera_ptr->nPort, voice_DecCBFun)){//设置解码回调函数，获取解码后的数据
+    //                 cout<<"设置解码回调函数失败"<<endl;
+    //             }
+    //             if (!PlayM4_Play(camera_ptr->nPort, NULL)){ //播放开始
+    //                 cout<<"播放失败"<<endl;
+    //             }
+    //             //打开音频解码, 需要码流是复合流
+    //             if (!PlayM4_PlaySound(camera_ptr->nPort))
+    //             {
+    //                 cout<<"音频播放失败"<<endl;
+    //             } 
+    //             break;
+    //         case NET_DVR_STREAMDATA:
+    //             if (dwBufSize > 0 && camera_ptr->nPort != -1)
+    //             {
+    //                 if (!PlayM4_InputData(camera_ptr->nPort, pBuffer, dwBufSize))
+    //                     {
+    //                         cout << "error" << PlayM4_GetLastError(camera_ptr->nPort) << endl;
+    //                         break;
+    //                     }
+    //             }
+    //             break;
+    //         default:
+    //             //其他数据
+    //             if (dwBufSize > 0 && camera_ptr->nPort != -1)
+    //             {
+    //                 if (!PlayM4_InputData(camera_ptr->nPort, pBuffer, dwBufSize))
+    //                 {
+    //                     break;
+    //                 }
+    //             }
+    //             break;
+    //     }
+    // }
+}
+
+
+/*
+    * @Description:音频回调函数
+*/
+void CALLBACK fVoiceDataCallBack(LONG lVoiceComHandle, 
+                                char *pRecvDataBuffer, 
+                                DWORD dwBufSize, 
+                                BYTE byAudioFlag, 
+                                void*pUser){
+    CameraParamPtr camera_ptr = (CameraParamPtr)pUser;
+    // std::cout<<"音频回调函数"<<std::endl;
+    //byAudioFlag 1是设备发过来的数据，0是本地采集数据
+    if(byAudioFlag == 1){
+        //            输入数组      short长度   输出的数组           输出的字节长度
+        // Resample16K((short*)pBuf ,nSize/2, (short*)data_Buffer, out_len);//8K转为16k
+        // std::cout<<"音频数据大小:"<<dwBufSize<<std::endl;
+        int num = sendto(camera_ptr->voice_upload_socket, pRecvDataBuffer, dwBufSize,
+                    0 , (struct sockaddr *)&camera_ptr->voice_addr, sizeof(struct sockaddr));
+    } 
 }
 
 void Resample16K(short* pInAudioData, int nInAudioLen, short* pOutAudioData, int& nOutAudioLen)
@@ -374,6 +374,22 @@ void _read_temperature(void* args)
                                     &thermometry,sizeof(thermometry),RemoteConfigCallback,NULL);
     // cout<<"启动:"<<_camera_param_ptr->lTemperatureHandle<<endl;
 }
+
+/*
+    * @Description:打开声音获取
+*/
+void _read_voice(void* args){
+    CameraParamPtr _camera_param_ptr = (CameraParamPtr)args;
+    _camera_param_ptr->lVoiceHanle = NET_DVR_StartVoiceCom_V30(_camera_param_ptr->lUserID, 1,AUDIO_DATA_TYPE, fVoiceDataCallBack, _camera_param_ptr);
+    if(_camera_param_ptr->lVoiceHanle < 0){
+        std::cout<<"声音读取失败，错误值："<<NET_DVR_GetLastError()<<std::endl;
+    }else{
+        std::cout<<"声音读取成功，返回值："<<_camera_param_ptr->lVoiceHanle<<std::endl;
+    }
+    NET_DVR_SetVoiceComClientVolume(_camera_param_ptr->lVoiceHanle, 0);
+
+}
+
 void _video_begin(void* args){
     CameraParamPtr _camera_param_ptr = (CameraParamPtr)args;
     _camera_param_ptr->lRealPlayHandle = NET_DVR_RealPlay_V40(_camera_param_ptr->lUserID, 
@@ -468,16 +484,16 @@ void _login_camera(void* args){
     }
 }
 
-void voice_sleep(void* args)
-{
-    _voice_sleep(&awake_param);
-}
+// void voice_sleep(void* args)
+// {
+//     _voice_sleep(&awake_param);
+// }
 //语音系统休眠，恢复标志位
-void _voice_sleep(void* args)
-{
-    VoiceAwakeParamPtr _awake_param_ptr = (VoiceAwakeParam*)args;
-    QIVWSessionEnd(_awake_param_ptr->session_id,"ok");
-    _awake_param_ptr->is_awake = false;
-    _awake_param_ptr->session_id = NULL;
-    _awake_param_ptr->audio_stat = MSP_AUDIO_SAMPLE_FIRST;
-}
+// void _voice_sleep(void* args)
+// {
+//     VoiceAwakeParamPtr _awake_param_ptr = (VoiceAwakeParam*)args;
+//     QIVWSessionEnd(_awake_param_ptr->session_id,"ok");
+//     _awake_param_ptr->is_awake = false;
+//     _awake_param_ptr->session_id = NULL;
+//     _awake_param_ptr->audio_stat = MSP_AUDIO_SAMPLE_FIRST;
+// }

@@ -1,10 +1,10 @@
 {
     "map_name": "factoryall",
-    "map_width": 12800,
-    "map_height": 9568,
+    "map_width": 128,
+    "map_height": 96,
     "robot_position": {
-        "x": 1229,
-        "y": 7253,
-        "angle": 155.9597243931575
+        "x": 37,
+        "y": 68,
+        "angle": 7.064734827249359
     }
 }

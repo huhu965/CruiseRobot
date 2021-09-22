@@ -55,7 +55,6 @@ class robot_client_message_process(Client_Socket,Param_Init):
         self.methods = ["POST","GET"]
         self.cmd_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #udp,给摄像头那边发送指令
         self.exam_cmd_queue = Queue()
-        self.thread_process_init()
 
     def thread_process_init(self):
         #心跳线程
@@ -80,6 +79,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
     def thread_process_start(self): #thread 一定要放在run中跑，不然会不在一个进程
         self.heart_thread.start()
         self.robot_status_update_thread.start()
+        time.sleep(1)
         self.robot_navigate_status_update_thread.start()
         self.robot_position_update_thread.start()
         self.status_check_thread.start()
@@ -224,6 +224,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
             self.respond_send(back_data)
     #运行
     def run(self):
+        self.thread_process_init()
         self.thread_process_start()
         # self.heart_thread.start() ###########
         # self.robot_awake_process.start() ###########
@@ -240,6 +241,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
                     time.sleep(2)
                     continue
                 else:
+                    # print(request_data)
                     self.process_request(request_data)
             except Exception as e:
                 print(e)
@@ -249,7 +251,8 @@ class robot_client_message_process(Client_Socket,Param_Init):
 
 def main():
     play_system_audio('开始初始化')
-    time.sleep(120)
+    print(datetime.datetime.now())
+    time.sleep(2)
     server_ip =  ('47.97.11.25', 62222)#服务器的公网地址和端口
     request_process = robot_client_message_process(server_ip)
     request_process.run()
