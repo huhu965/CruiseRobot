@@ -1,0 +1,29 @@
+{
+    "name": "",
+    "loop": false,
+    "loop_count": 1,
+    "map_name": "factoryall",
+    "tasks": [
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "te1"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "te2"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
+                "position_name": "te3"
+            }
+        }
+    ]
+}

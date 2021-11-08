@@ -29,6 +29,13 @@
             "name": "NavigationTask",
             "start_param": {
                 "map_name": "factoryall",
+                "position_name": "7ruanguan1"
+            }
+        },
+        {
+            "name": "NavigationTask",
+            "start_param": {
+                "map_name": "factoryall",
                 "position_name": "7navi1"
             }
         },
@@ -37,13 +44,6 @@
             "start_param": {
                 "map_name": "factoryall",
                 "position_name": "7navi2"
-            }
-        },
-        {
-            "name": "NavigationTask",
-            "start_param": {
-                "map_name": "factoryall",
-                "position_name": "1xuncha3"
             }
         },
         {

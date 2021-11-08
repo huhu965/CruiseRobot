@@ -68,7 +68,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
         #机器人位置信息线程
         self.robot_position_update_thread = robot_position_update_Thread()
         #提交数据线程
-        self.robot_device_data_upload_thread = robot_device_data_upload_Thread(self,("47.97.11.25",62223))
+        self.robot_device_data_upload_thread = robot_device_data_upload_Thread(self,("61.132.111.26",9922))
         #声音相关功能处理线程
         self.robot_awake_process = RobotAwakeProcess(self.exam_cmd_queue)
         #温度报警线程
@@ -91,7 +91,7 @@ class robot_client_message_process(Client_Socket,Param_Init):
     #链接成功后向服务器部分注册自己的身份
     def register_identity(self):
         if self.socket_link_flag:
-            content = b"robot_client \r\n"
+            content = b"cz_robot \r\n"
             self.recv_socket.sendall(content)
     #接收服务器传过来的数据
     #服务器传数据会先传一个数据结构过来，存放即将传输的数据大小
@@ -227,12 +227,11 @@ class robot_client_message_process(Client_Socket,Param_Init):
         self.thread_process_init()
         self.thread_process_start()
         # self.heart_thread.start() ###########
-        # self.robot_awake_process.start() ###########
-        self.connect_server()###########
-        self.register_identity()#注册身份###########
+        self.connect_server()
+        self.register_identity()#注册身份
         time.sleep(2)
         play_system_audio('初始化完成')
-        # open_video(self, robot_usr = True)
+        open_video(self, robot_usr = True)
         while True:
             try:
                 request_data = self.receive_request()
@@ -250,10 +249,11 @@ class robot_client_message_process(Client_Socket,Param_Init):
         self.recv_socket.close()
 
 def main():
+    time.sleep(20)
     play_system_audio('开始初始化')
-    print(datetime.datetime.now())
-    time.sleep(2)
-    server_ip =  ('47.97.11.25', 62222)#服务器的公网地址和端口
+    time.sleep(100)
+    server_ip =  ('61.132.111.26', 9921)#服务器的公网地址和端口
+    # server_ip =  ('127.0.0.1', 9921)#服务器的公网地址和端口
     request_process = robot_client_message_process(server_ip)
     request_process.run()
 

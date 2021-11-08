@@ -1,0 +1,7 @@
+// pyinstaller -F -w main_window.py --paths="/usr/local/lib/python3.6/dist-packages/cv2/python-3.6/"
+
+//修改默认内核版本
+// sudo /etc/default/grub
+//GRUB_DEFAULT="Advanced options for Ubuntu>Ubuntu, with Linux 4.15.0-45-generic"
+//sudo update-grub
+

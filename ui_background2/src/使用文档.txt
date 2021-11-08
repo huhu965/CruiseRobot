@@ -1,0 +1,13 @@
+机器人开机后，要先初始化机器人位置，机器人获取自己位置后才能进行导航
+
+/gs-robot/cmd/initialize_directly?map_name=?&init_point_name=?
+不转圈初始化，可以在中控室内用Origin点来初始化
+机器人断电后没有移动也可以用Current点来初始化
+
+/gs-robot/cmd/initialize?map_name=?&init_point_name=?
+转圈初始化，要给定位置点，但不用方向，选定位置要开阔
+室外开机时，机器人关机后没有移动，也可以用Current点来初始化
+
+/gs-robot/cmd/power_off
+机器人按关机键时，先调用该函数，关闭上位机，按断电按钮
+

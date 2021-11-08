@@ -4,6 +4,7 @@
 #  * @Last Modified by: Hu Ziwei
 #  * @Last Modified time: 2021-07-06 23:46:54 
 # */
+
 import socketserver
 import threading
 import time
@@ -17,6 +18,7 @@ import json
 import redis
 socket_dict = {} #存socket链接的
 robot_tcp_use_lock = threading.Lock()
+cz_robot_tcp_use_lock = threading.Lock()
 redis_db = redis.Redis(host='127.0.0.1', port=6379, db=0,decode_responses=True)
 
 class RecviveRobotData(Thread):
@@ -36,7 +38,8 @@ class RecviveRobotData(Thread):
                 redis_db.set(data_dict["time"],data_str[:-4]) #所有数据存储起来
                 redis_db.hset("last_status", "last_status_data", data_str[:-4])#每次更新
             except Exception as e:
-                print(e)
+                print("RecviveRobotData:",e)
+                time.sleep(1)
         self.receive_socket.shutdown(2)
         self.receive_socket.close()
 
@@ -54,7 +57,7 @@ class RecviveRobotVideoNormal(Thread): #接收彩色视频
         while True:
             try:
                 data, addr = self.receive_socket.recvfrom(10000)
-                stamp = struct.unpack('I', data[0:4]) #解算时间戳
+                stamp, = struct.unpack('I', data[0:4]) #解算时间戳
                 if stamp >= self.last_stamp:
                     self.last_stamp = stamp
                     if len(data) > 4 and (self.target_client_identify in socket_dict.keys()): #不只有时间戳，还有数据
@@ -64,7 +67,8 @@ class RecviveRobotVideoNormal(Thread): #接收彩色视频
                 elif stamp < (self.last_stamp - 15): #如果时间戳小于之前的15次，可以认为是一次新的信息传输
                     self.last_stamp = stamp
             except Exception as e:
-                print(e)
+                print("RecviveRobotVideoNormal:",e)
+                time.sleep(1)
         self.receive_socket.shutdown(2)
         self.receive_socket.close()
         
@@ -83,7 +87,7 @@ class RecviveRobotVideoInfrared(Thread): #接收彩色视频
         while True:
             try:
                 data, addr = self.receive_socket.recvfrom(10000)
-                stamp = struct.unpack('I', data[0:4]) #解算时间戳
+                stamp, = struct.unpack('I', data[0:4]) #解算时间戳
                 if stamp >= self.last_stamp:
                     self.last_stamp = stamp
                     if len(data) > 4 and (self.target_client_identify in socket_dict.keys()): #不只有时间戳，还有数据
@@ -93,7 +97,8 @@ class RecviveRobotVideoInfrared(Thread): #接收彩色视频
                 elif stamp < (self.last_stamp - 15): #如果时间戳小于之前的15次，可以认为是一次新的信息传输
                     self.last_stamp = stamp
             except Exception as e:
-                print(e)
+                print("RecviveRobotVideoInfrared:",e)
+                time.sleep(1)
         self.receive_socket.shutdown(2)
         self.receive_socket.close()
 
@@ -101,12 +106,17 @@ class RobotLink:
     lock = threading.Lock()
     robot_tcp = None
     robot_tcp_link = False
+    
+    cz_robot_tcp = None
+    cz_robot_tcp_link = False
     #根据客户端链接发送的信息 
     #注册不同的身份
     #用于不同的处理
     @classmethod
     def join(cls, client):
         global socket_dict   #tcp链接存储
+        global robot_tcp_use_lock
+        global cz_robot_tcp_use_lock
         with cls.lock:
             if client.method == "robot_client":
                 if not cls.robot_tcp_link:
@@ -114,16 +124,36 @@ class RobotLink:
                     cls.robot_tcp_link = True
                     client.identity = 'robot'
                     client.robot_keep_live = cls.robot_tcp_link
+                    client.robot_tcp_lock_ = robot_tcp_use_lock
                     val = struct.pack("QQ", 3,0)
                     client.request.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, val)#设置接收超时链接
                 elif cls.robot_tcp_link:
                     client.identity = 'error'
                     print("等待关闭之前链接")
+                    
+            if client.method == "cz_robot":
+                if not cls.cz_robot_tcp_link:
+                    cls.cz_robot_tcp = client #记录下机器人客户端
+                    cls.cz_robot_tcp_link = True
+                    client.identity = 'cz_robot'
+                    client.robot_keep_live = cls.cz_robot_tcp_link
+                    client.robot_tcp_lock_ = cz_robot_tcp_use_lock
+                    val = struct.pack("QQ", 3,0)
+                    client.request.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, val)#设置接收超时链接
+                elif cls.cz_robot_tcp_link:
+                    client.identity = 'error'
+                    print("等待关闭之前链接")
 
             elif client.method == "GET" or client.method == "POST":
                 client.identity = "user"
-                client.robot_tcp = cls.robot_tcp
-                client.robot_keep_live = cls.robot_tcp_link
+                if client.request_data.decode().split(' ')[1].startswith("/cz_robot"):
+                    client.robot_tcp = cls.cz_robot_tcp
+                    client.robot_keep_live = cls.cz_robot_tcp_link
+                    client.robot_tcp_lock_ = cz_robot_tcp_use_lock
+                else:
+                    client.robot_tcp = cls.robot_tcp
+                    client.robot_keep_live = cls.robot_tcp_link
+                    client.robot_tcp_lock_ = robot_tcp_use_lock
 
             elif client.method in socket_dict.keys():
                 socket_dict[client.method].request.close()#关闭上一个链接
@@ -138,10 +168,14 @@ class RobotLink:
             
     #用于处理机器人链接断开后的链接释放
     @classmethod
-    def close_link(cls):
+    def close_link(cls, cz_robot):
         with cls.lock:
-            cls.robot_tcp = None
-            cls.robot_tcp_link = False
+            if cz_robot:
+                cls.cz_robot_tcp = None
+                cls.cz_robot_tcp_link = False
+            else:
+                cls.robot_tcp = None
+                cls.robot_tcp_link = False
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     daemon_threads = True
@@ -153,7 +187,7 @@ class UserHandler(socketserver.BaseRequestHandler):
         try:
             self.process_command()
         except Exception as e:
-            print(e)
+            print("handle:",e)
         finally:
             print(f'Closed: {self.identity}')
     #对不同的类型进行不同处理
@@ -163,6 +197,7 @@ class UserHandler(socketserver.BaseRequestHandler):
         self.last_receive_time = datetime.datetime.now() #记录更新时间的
         self.robot_keep_live = False
         self.robot_tcp = None
+        self.robot_tcp_lock_ = None
         #接收链接的身份信息
         self.request_data = self.request.recv(3000)
         self.method = self.request_data.split(b' ')[0].decode('utf-8')#获取请求的方法
@@ -173,6 +208,8 @@ class UserHandler(socketserver.BaseRequestHandler):
                 self.request_data = self.request_data + request_data
 
         if self.identity == "robot":
+            self.robot_process()
+        elif self.identity == "cz_robot":
             self.robot_process()
         elif self.identity == "user":
             self.user_request()
@@ -193,16 +230,15 @@ class UserHandler(socketserver.BaseRequestHandler):
     #根据心跳检测判断客户端tcp链接是否断开或者不可用
     #自动回收无效的tcp链接    
     def robot_process(self):
-        global robot_tcp_use_lock
         while True:
             if (datetime.datetime.now() - self.last_receive_time).seconds > 15:
                 try:
-                    robot_tcp_use_lock.acquire()#上锁，表示工控机的客户端链接被占用
+                    self.robot_tcp_lock_.acquire()#上锁，表示工控机的客户端链接被占用
                     try:
                         _size = struct.calcsize('I')  #获取总的包尺寸
                         res = self.request.recv(_size)
                     except Exception as e:
-                        print("error:",e)
+                        print("robot_process_1:",e)
                         res = ''
 
                     if len(res) != 0:
@@ -216,9 +252,9 @@ class UserHandler(socketserver.BaseRequestHandler):
                         RobotLink.close_link() #删掉保存的链接
                         break
                 except Exception as e:
-                    print(e)
+                    print("robot_process_2:",e)
                 finally:
-                    robot_tcp_use_lock.release() #释放锁
+                    self.robot_tcp_lock_.release() #释放锁
             time.sleep(5) 
 
     #返回bytes格式响应
@@ -233,22 +269,21 @@ class UserHandler(socketserver.BaseRequestHandler):
 
     #处理来自后台软件的http请求
     def user_request(self):
-        global robot_tcp_use_lock
         global socket_dict
         all_data = b''
         try:
-            robot_tcp_use_lock.acquire()#上锁，表示工控机的客户端链接被占用
-            url = self.request_data.decode().split(' ')[1]
+            self.robot_tcp_lock_.acquire()#上锁，表示工控机的客户端链接被占用
             if self.robot_keep_live: #如果机器人那边链接了
-                url = self.request_data.decode().split(' ')[1]
+                url = self.request_data.decode().split(' ')[1].replace("/cz_robot", "",1)
                 if url.startswith("/gs-robot/data/device_status"):
                     back_data = self.respond_message_cerat(data = json.loads(redis_db.hget("last_status","last_status_data")))
                     self.request.sendall(back_data)
                     return
                 #转发请求
-                fhead = struct.pack('I',len(self.request_data)) 
+                request_data = self.request_data.decode().replace("/cz_robot", "",1).encode()
+                fhead = struct.pack('I',len(request_data)) 
                 self.robot_tcp.request.send(fhead) 
-                self.robot_tcp.request.send(self.request_data)
+                self.robot_tcp.request.send(request_data)
                 #读取完客户端发送的心跳，读取客户端发送信息的长度
                 _size = struct.calcsize('I')
                 fhead = self.robot_tcp.request.recv(_size,0x100)  #0x100在c++中代表接收waitall
@@ -274,7 +309,7 @@ class UserHandler(socketserver.BaseRequestHandler):
                 self.request.sendall(back_data) 
         #异常处理
         except Exception as e:
-            print(e)
+            print("user_request:",e)
             try:
                 self.robot_tcp.request.recv(50000)  #清空缓冲区
             except Exception:
@@ -282,7 +317,7 @@ class UserHandler(socketserver.BaseRequestHandler):
             back_data = self.respond_message_cerat(errorCode = "robot not link",msg = "fail", successed= False)
             self.request.sendall(back_data) 
         finally:
-            robot_tcp_use_lock.release() #释放锁
+            self.robot_tcp_lock_.release() #释放锁
 
     #target_client_identify 收到信息要转发到的地址
     def video_message_process(self,target_client_identify):
@@ -311,7 +346,8 @@ class UserHandler(socketserver.BaseRequestHandler):
                     if target_client_identify in socket_dict.keys():
                         socket_dict[target_client_identify].request.send(fhead)                
             except Exception as e:
-                print(e)
+                print(f"video_message_process:{target_client_identify}  ",e)
+                break
 
     #接收机器人上传的视频，发送给后台软件
     def robot_video_process(self):
@@ -361,13 +397,15 @@ class UserHandler(socketserver.BaseRequestHandler):
         del socket_dict[self.identity]  #断开连接后从链接字典中删除
 
 if __name__ == '__main__':
-    host = socket.gethostname()
+    # host = socket.gethostname()
+    host = "127.0.0.1"
     rt = RecviveRobotData((host, 62223)) #udp 接收上传数据的
     rn = RecviveRobotVideoNormal()
     ri = RecviveRobotVideoInfrared()
     rt.start()
     rn.start()
     ri.start()
-    with ThreadedTCPServer((host, 62222), UserHandler) as server:
+    with ThreadedTCPServer((host, 9921), UserHandler) as server:  #自动调用close()
         print(f'robot trans server is running...')
         server.serve_forever()
+

@@ -6,14 +6,14 @@ import numpy
 import time
 import json
 import asyncio
-import websockets
+# import websockets
 import robot_api
 import datetime
 import json
 import struct
 from thread_class import *
 from PyQt5.QtCore import QPoint
-import redis
+# import redis
 import os
 
 # def exect_display():
@@ -57,7 +57,7 @@ import os
 ###################################
 
 # # 开始建图
-# param = {"map_name":"factoryall","type":"1"}
+# param = {"map_name":"factoryall"}
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['start_scan_map']}", params= param,timeout=5)
 
 # 查看存储的地图列表
@@ -66,24 +66,26 @@ import os
 # 加载地图
 # param = {"map_name":"factory"}
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['cancel_navigate']}", params = param, timeout=5)
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['delete_map']}", params = param, timeout=5)delete_map
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['is_initialize_finished']}", timeout=5)
 # 转圈初始化
 
-# param = {"map_name":"factoryall","init_point_name":"厂区入口"}
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['cancle_task_queue']}", timeout=5)
+# param = {"map_name":"factoryall","position_name":"t2"}
+# param = {"map_name":"factoryall","init_point_name":"Origin"}
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['initialize_directly']}", params = param, timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['initialize_directly']}", params=param,timeout=5)
 
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_light']}", timeout=5)
-response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_voice_exam']}", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['maps']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_video']}", timeout=5)
 # # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}/gs-robot/cmd/open_video_nointer", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['device_status']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['power_off']}", timeout=5)
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_voice_exam']}", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['close_video']}", timeout=5)
 # response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['gps_raw']}", timeout=5)
 # # 查看地图的点列表
 
 # param = {"map_name":"002","type":2}
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['positions']}", params=param, timeout=3)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['position']}", timeout=3)
 
 # 获取地图图片
 # param = {"map_name":"test"}
@@ -165,7 +167,7 @@ response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{rob
 # time.sleep(2)
 # param = {"dwPTZCommand":23,"dwSpeed":1,"dwStop":1}
 
-# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['device_status']}", timeout=5)
+# response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{robot_api.API['open_voice_exam']}", timeout=5)
 
 # 更换服务器地址
 # headers = {
@@ -173,5 +175,9 @@ response = requests.get(f"http://{robot_api.robot_ip}:{robot_api.robot_port}{rob
 # "Connection": "close",
 # }
 # response = requests.get(f"http://127.0.0.1:62223/gs-robot/cmd/change_server_ip?ip=127.0.0.1&port=62222",headers=headers,timeout=5)
-print(response.status_code)
-print(response.content)
+# print(response.status_code)
+# print(response.content)
+
+
+# send_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) #udp 链接服务器
+# send_socket.sendto(("data" + '\r\n\r\n').encode("utf-8"), ("61.132.111.26",9922))

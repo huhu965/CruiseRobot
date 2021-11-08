@@ -1,0 +1,116 @@
+点记名规则
+
+
+#{ 响应的统一格式，successed表示请求接口是否成功，失败msg会有错误信息，如果有返回数据，统一在data里获取
+#   "data"："",
+#   "errorCode":"",
+#   "msg":"successed",
+#   "successed":"true"
+# }
+
+"/gs-robot/real_time_data/odom_raw",    # 获取里程计数据
+"/gs-robot/real_time_data/gps_raw",  # 获取gps数据，这里应该是没处理的数据
+"/gs-robot/real_time_data/cmd_vel" ,     # 获取实时角速度和线速度数据
+"/gs-robot/real_time_data/scan_map_png", # 获取实时扫描地图 
+
+
+{
+    "gridPosition"：{
+        "x":x,
+        "y":y
+        },
+    "angle":int,
+    "mapInfo"：{
+        "gridWidth":int,
+        "gridHeight":int}
+        }
+"/gs-robot/real_time_data/position",    # 初始化之后，可以获取机器人的实时位置
+
+"/gs-robot/real_time_data/gps",  # 初始化之后，可以获取机器人的gps位置
+"/gs-robot/real_time_data/navigate_path", # 导航实时路线
+
+#data
+# {"autoMode":false,
+# "battery":77, 电池电量
+# "charger":0, 充电状态
+# "chargerCurrent":0,
+# "chargerVoltage":0,
+# "emergency":false, 急停
+# "emergencyStop":false, 急停 上一个参数相或
+# "locationStatus":false,定位状态
+# "navigationSpeedLevel":2, 导航速度等级
+# "speed":0, 实时速度
+# "noticeTypeLevel":INFO or WARN  通知等级，是日常通知还是警告
+# "noticeType": LOCALIZATION_FAILED定位失败，REACHED 到达目的地，PLANNING 正在规划，HEADING 正在前往目的地，UNREACHED到达目的地，但有障碍物，
+# "noticeDataFields":tye类型字段的说明，可以忽略
+"/gs-robot/data/device_status",    # 获取设备状态数据
+
+
+"/gs-robot/data/positions",#?map_name=?&type=?",  # 获取地图标记点的数据，type为空返回所有点，否则返回type表示类型的点
+"/gs-robot/data/map_png",#?map_name=?",   # 获取地图图片
+"/gs-robot/data/maps", #获取地图列表
+
+#cmd
+"/gs-robot/cmd/add_position",   #?position_name=?&type=?",  # 添加标记点
+"/gs-robot/cmd/delete_position",    #?map_name=?&position_name=?", # 删除标记点
+"/gs-robot/cmd/start_scan_map",    #map_name=?&type=?# 开始扫描地图，type=0新建，=1扩展地图
+"/gs-robot/cmd/cancel_scan_map",  # 取消扫描，不保存地图
+"/gs-robot/cmd/async_stop_scan_map",   # 结束扫描，保存地图，异步
+"/gs-robot/cmd/is_stop_scan_finished",  # 异步结束扫地图是否完成
+"/gs-robot/cmd/delete_map",     #map_name=?",  # 删除地图
+"/gs-robot/cmd/load_map",    #map_name=?",  # 加载地图
+"/gs-robot/cmd/initialize_directly",    #map_name=?&init_point_name=?",   # 不转圈初始化，
+"/gs-robot/cmd/initialize", #map_name=?&init_point_name=?",   # 转圈初始化，要给定位置点，但不用方向
+"/gs-robot/cmd/is_initialize_finished",# 转圈初始化 是否完成
+
+
+#给定坐标点和角度
+param = {
+    "destination":{
+        "angle":angle,
+        "gridPosition":{"x":x,"y":y}      
+            }
+        }
+
+"/gs-robot/cmd/navigate", #post,从地图获取导航点，然后传给机器人
+
+
+"/gs-robot/cmd/position/navigate",#?map_name=?&position_name=?",  # 导航到指定地图的指定标记点
+"/gs-robot/cmd/pause_navigate",   # 暂停导航
+"/gs-robot/cmd/resume_navigate",   # 恢复导航
+"/gs-robot/cmd/cancel_navigate",   # 取消导航
+
+param = {"speed":{"linearSpeed":0.3,"angularSpeed":0}}
+"/gs-robot/cmd/move", #post请求，传入线速度和角速度，都是-0.6 - 0.6，角速度负值右转，正值左转。
+
+"/gs-robot/cmd/move_to",#?distance=?&speed=?",   # 定速定距离移动，速度-0.6 - 0.6米/秒
+"/gs-robot/cmd/is_move_to_finished",  # 判读定速定距离移动是否完成
+"/gs-robot/cmd/stop_move_to",   # 停止定速定距离移动
+
+"/gs-robot/cmd/clear_mcu_error",#error_id=-1",  # 清除驱动器错误，不知道错误id默认传-1
+
+"/gs-robot/cmd/power_off",  # 关机
+
+"/gs-robot/cmd/set_speed_level",    #level=?",  # 设置导航时移动速度，低中高，0 1 2,
+
+"/gs-robot/cmd/stop_task_queue",    #停止所有队列任务
+"/gs-robot/cmd/start_task_queue",   #开始队列任务
+"/gs-robot/cmd/resume_task_queue",  #恢复队列任务
+"/gs-robot/cmd/cancle_task_queue",  #恢复队列任务
+
+param = {"angle": angle,
+        "gridX": x,
+        "gridY": y,
+        "mapName": "map_name",
+        "name": "name", 添加的点的名称
+        "type": 2} 类型，1是初始点，2是导航点
+"/gs-robot/cmd/position/add_position", #post 直接在地图上添加标记点
+
+"/gs-robot/cmd/ptz_direction_control",#direction=?  left，right，up，down
+"/gs-robot/cmd/open_video",     #向服务器要求打开视频传输
+"/gs-robot/cmd/close_video",    #关闭视频传输
+"/gs-robot/cmd/open_light",     #打开报警灯
+"/gs-robot/cmd/close_light",    #关闭报警灯
+
+
+find / -size +100M |xargs ls -lh 查找大于100m的文件

@@ -28,6 +28,7 @@ void FunctionRegister()
     FunctionMap["video_stop"] = video_stop;
     FunctionMap["ptz_control"] = PTZ_control;
 }
+
 //退出收尾函数
 void exit_func(int sig){
     _video_stop(&normal_camera);
@@ -43,6 +44,7 @@ void exit_func(int sig){
     NET_DVR_Cleanup();
     exit(sig);
 }
+
 // void* voice_awake(void* args)
 // {
 //     VoiceAwakeParamPtr _awake_param_ptr = (VoiceAwakeParam*)args;
@@ -129,6 +131,7 @@ void *video_handle_func(void* args){
     }
     pthread_exit(NULL);
 }
+
 //心跳线程
 void *heart_func(void* args){
     CameraParamPtr _camera_param_ptr = (CameraParam*)args;
@@ -164,8 +167,8 @@ void param_init(){
     //设置服务器地址
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(62222);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
-    addr.sin_addr.s_addr = inet_addr("47.97.11.25");
+    addr.sin_port = htons(9921);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
+    addr.sin_addr.s_addr = inet_addr("63.132.111.26");
     // addr.sin_addr.s_addr = inet_addr("10.7.5.127");
 
     normal_camera.server_addr = addr;
@@ -173,14 +176,14 @@ void param_init(){
     //设置视频udp地址
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(62220);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
-    addr.sin_addr.s_addr = inet_addr("47.97.11.25");
+    addr.sin_port = htons(9923);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
+    addr.sin_addr.s_addr = inet_addr("63.132.111.26");
     normal_camera.video_udp_addr = addr;
 
     memset(&addr, 0, sizeof(addr));
     addr.sin_family = AF_INET;
-    addr.sin_port = htons(62221);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
-    addr.sin_addr.s_addr = inet_addr("47.97.11.25");
+    addr.sin_port = htons(9924);//将一个无符号短整型的主机数值转换为网络字节顺序，即大尾顺序(big-endian)
+    addr.sin_addr.s_addr = inet_addr("63.132.111.26");
     infrared_camera.video_udp_addr = addr;
     //设置指令接收地址
     memset(&addr, 0, sizeof(addr));

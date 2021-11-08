@@ -1,16 +1,3 @@
-/* 
- * @Author: Hu Ziwei
- * @Description: 测试功能用的
- * @Date: 2021-07-16 00:23:45
- * @Last Modified by: Hu Ziwei
- * @Last Modified time: 2021-07-19 21:31:57
- * @命名规则
- *   1.类名和方法命名用Pascal ，FunName
- *   2.类内变量，全部小写，下划线分割，param_name
- *   3.类内私有的变量和方法统一在最后加下划线，FunNam_;param_name_
- *   4.函数内临时变量统一在前面加下划线，_param_name
- *   5.方法名带数字驼峰不好阅读时，加_下划线分割，Transform_Tyv12_To_Cv8uc3
-*/
 
 #include <signal.h>
 #include <unistd.h>

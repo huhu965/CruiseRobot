@@ -1,5 +1,5 @@
-robot_ip = "47.97.11.25"
-robot_port = 62222
+robot_ip = "61.132.111.26"
+robot_port = 9921
 # robot_ip = "10.7.5.88"
 # robot_port = 8080
 
